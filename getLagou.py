@@ -27,6 +27,8 @@ def get_headers(page_no):
 
 
 def get_job_info(page_no):
+    jost_details = []
+
     res = requests.get(url=get_url(page_no), data=get_params(page_no), headers=get_headers(page_no))
     res.encoding = res.apparent_encoding
 
@@ -42,7 +44,17 @@ def get_job_info(page_no):
         money = job.find(name="span", attrs={"class": "money__3Lkgq"}).text
         experience_text = job.find(name="span", attrs={"class": "money__3Lkgq"}).find_next_sibling(string=True).strip()
         print(f"{position_name}\t{money}\t{origin}\t{distinct}\t{experience_text}")
+        jost_details.append(
+             {"position_name": position_name,
+            "money": money,
+            "origin": origin,
+            "distinct": distinct,
+            "experience_text": experience_text,
+            }
+        )
 
+    return jost_details
 
 if __name__ == '__main__':
-    get_job_info(1)
+    jost_details = get_job_info(1)
+    print(jost_details)
