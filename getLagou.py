@@ -73,4 +73,4 @@ def get_all_job_info(max_page=0):
                 job_info_file.write(f"{job_detail.get("position_name")}\t{job_detail.get("money")}\t{job_detail.get("origin")}\t{job_detail.get("distinct")}\t{job_detail.get("experience_text")}\n")
 
 if __name__ == '__main__':
-    get_all_job_info(max_page=1)
+    get_all_job_info(max_page=2)
