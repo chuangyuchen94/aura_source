@@ -2,6 +2,8 @@ import requests
 import uuid
 import hashlib
 import os
+import time
+import random
 
 def get_unique_file_name(file_type):
     raw = uuid.uuid4().hex
@@ -41,15 +43,21 @@ def get_images(page_no, max_page, image_directory):
 
             images_json = res.json()
             for num, image_data in enumerate(images_json["data"]):
-                if not image_data:
+                if len(image_data) == 0 and num == 0:
+                    print(f"数据内容：{images_json}")
                     continue
+
+                if len(image_data) == 0:
+                    break
 
                 image_type = image_data["type"]
                 image_url = image_data["middleURL"]
 
                 save_image_to_file(image_url, image_type, image_directory)
+
+            time.sleep(random.randint(1, 5))
         except Exception as ex:
-            print(ex)
+            print(f"异常：{ex}")
             print(res)
             print(image_data)
 
