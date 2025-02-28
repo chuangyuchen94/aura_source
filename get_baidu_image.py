@@ -37,6 +37,8 @@ def get_images(page_no, max_page, image_directory):
     for page_no in range(page_no, max_page, 30):
         image_url = f"""https://image.baidu.com/search/acjson?tn=resultjson_com&logid=11372884182457470742&ipn=rj&ct=201326592&is=&fp=result&fr=&word=%E7%BE%8E%E5%A5%B3&cg=girl&queryWord=%E7%BE%8E%E5%A5%B3&cl=2&lm=&ie=utf-8&oe=utf-8&adpicid=&st=-1&z=&ic=0&hd=&latest=&copyright=&s=&se=&tab=&width=&height=&face=0&istype=2&qc=&nc=1&expermode=&nojc=&isAsync=&pn={page_no}&rn=30&gsm=5a&1740658639617="""
 
+        print(f"url = {image_url}")
+
         try:
             res = requests.get(url=image_url, headers=headers)
             print(f"第{page_no - 30}~{page_no}条数据，处理结果：{res.status_code}\n")
