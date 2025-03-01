@@ -1,5 +1,4 @@
 import requests
-import you_get
 from bs4 import BeautifulSoup
 import os
 
