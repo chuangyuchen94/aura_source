@@ -4,17 +4,25 @@ import hashlib
 import os
 import time
 import random
+import hashlib
 
 def get_unique_file_name(file_type):
     raw = uuid.uuid4().hex
     return hashlib.sha256(raw.encode()).hexdigest() + "." + file_type.replace(".", "")
 
-def save_image_to_file(url, type, directory):
+def save_image_to_file(url, type, directory, md5_set):
     res = requests.get(url)
     if res.status_code != 200:
         return
 
     image_data = res.content
+    image_md5_value = hashlib.md5(image_data).hexdigest()
+    if image_md5_value in md5_set:
+        print("出现重复数据\n")
+        return
+
+    md5_set.add(image_md5_value)
+
     image_file_name = get_unique_file_name(type)
     image_path = os.path.join(str(directory), image_file_name)
 
@@ -33,6 +41,7 @@ def get_headers():
 
 def get_images(page_no, max_page, image_directory):
     headers = get_headers()
+    image_md5 = set()
 
     for page_no in range(page_no, max_page, 30):
         image_url = f"""https://image.baidu.com/search/acjson?tn=resultjson_com&logid=11372884182457470742&ipn=rj&ct=201326592&is=&fp=result&fr=&word=%E7%BE%8E%E5%A5%B3&cg=girl&queryWord=%E7%BE%8E%E5%A5%B3&cl=2&lm=&ie=utf-8&oe=utf-8&adpicid=&st=-1&z=&ic=0&hd=&latest=&copyright=&s=&se=&tab=&width=&height=&face=0&istype=2&qc=&nc=1&expermode=&nojc=&isAsync=&pn={page_no}&rn=30&gsm=5a&1740658639617="""
@@ -55,9 +64,10 @@ def get_images(page_no, max_page, image_directory):
                 image_type = image_data["type"]
                 image_url = image_data["middleURL"]
 
-                save_image_to_file(image_url, image_type, image_directory)
+                save_image_to_file(image_url, image_type, image_directory, image_md5)
 
-            time.sleep(random.randint(1, 5))
+            print(len(image_md5))
+            time.sleep(random.randint(1, 3))
         except Exception as ex:
             print(f"异常：{ex}")
             print(res)
