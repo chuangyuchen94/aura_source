@@ -31,4 +31,24 @@
     - 增加一列，标识哪些行的数据原先是缺失的
 
 ### 3. 分类变量（categorical variable）
-- 
+- 什么是分类变量：只有有限个数的值的变量
+- 对分类变量，要先做预处理
+  - 不然，直接给到模型处理，很多模型会直接报错
+- 3个策略
+  - 策略1：直接把分类变量干掉，不要了
+    - 代码示例
+      - X_train.select_dtypes(exclude=["object"]) # 把非数字的列排除掉
+  - 策略2：序数编码（Ordinal Encoding）
+    - 把选项映射成有序的枚举值，枚举值之间可以排序
+    - 代码示例
+      - from sklearn.preprocessing import OrdinalEncoder
+      - ordinal_encoder = OrdinalEncoder()
+      - s = (X_train.dtypes == "object")
+      - object_cols = list(s[s].index)
+      - label_X_train[object_cols] = ordinal_encoder.fit_transform(X_train[object_cols])
+      - label_X_valid[object_cols] = 
+  - 策略3：独热编码（One-Hot Encoding）
+    - 对每个枚举值单独创建一列，值为0或1，其中，1表示该行数据取得该枚举值
+    - 优点：对枚举值的排序没有要求
+    - 缺点：枚举值太多，会影响模型性能
+  - 
