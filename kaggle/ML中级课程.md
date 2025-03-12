@@ -46,7 +46,7 @@
       - s = (X_train.dtypes == "object")
       - object_cols = list(s[s].index)
       - label_X_train[object_cols] = ordinal_encoder.fit_transform(X_train[object_cols])
-      - label_X_valid[object_cols] = 
+      - label_X_valid[object_cols] = ordinal_encoder.transform(X_valid[object_cols])
   - 策略3：独热编码（One-Hot Encoding）
     - 对每个枚举值单独创建一列，值为0或1，其中，1表示该行数据取得该枚举值
     - 优点：对枚举值的排序没有要求
