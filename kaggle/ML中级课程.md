@@ -34,7 +34,7 @@
 - 什么是分类变量：只有有限个数的值的变量
 - 对分类变量，要先做预处理
   - 不然，直接给到模型处理，很多模型会直接报错
-- 3个策略
+- 3个策略（通常情况下，独热编码最优）
   - 策略1：直接把分类变量干掉，不要了
     - 代码示例
       - X_train.select_dtypes(exclude=["object"]) # 把非数字的列排除掉
@@ -51,4 +51,23 @@
     - 对每个枚举值单独创建一列，值为0或1，其中，1表示该行数据取得该枚举值
     - 优点：对枚举值的排序没有要求
     - 缺点：枚举值太多，会影响模型性能
-  - 
+    - 代码示例
+      - from sklearn.preprocessing import OneHotEncoder
+      - one_hot_encoder = OneHotEncoder(handle_unknown="ignore", sparse=False)
+        - 参数说明：
+          - handle_unknown="ignore" ：当验证数据（测试数据）中的枚举值，在训练集中不存在时，忽略该枚举值
+          - sparse=False ：返回numpy数组，而不是稀疏矩阵
+      - one_handle_train_cols = pd.DataFrame(one_hot_encoder.fit_transform(X_train[object_cols]))
+      - one_handle_valid_cols = pd.DataFrame(one_hot_encoder.transform(X_valid[object_cols]))
+      - 独热编码会生成新的RangeIndex，需要将其恢复为原来的索引
+        - one_handle_train_cols.index = X_train.index
+        - one_handle_valid_cols.index = X_valid.index
+      - num_X_train = X_train.drop(object_cols, axis=1) : 保留数字列
+      - num_X_valid = X_valid.drop(object_cols, axis=1) ：保留数字列
+      - 将数字列与独热编码后的列进行合并：
+        - one_handle_X_train = pd.concat([one_handle_train_cols, num_X_train], axis=1)
+        - one_handle_X_valid = pd.concat([one_handle_valid_cols, num_X_valid], axis=1)
+      - 对数据进行进一步处理：列名统一为字符串（因为经过OneHotEncoder处理后，列名会变成数字）
+        - one_handle_X_train.columns = one_handle_X_train.columns.astype(str)
+        - one_handle_X_valid.columns = one_handle_X_valid.columns.astype(str)
+      - 
