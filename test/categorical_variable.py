@@ -2,9 +2,9 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 all_data = pd.read_csv("../data/melb_data.csv")
-print(all_data.head())
-print(all_data.columns)
-print(all_data.shape)
+# print(all_data.head())
+# print(all_data.columns)
+# print(all_data.shape)
 
 # 1. 清除价格列为空的行
 all_data.dropna(axis=0, subset=["Price"], inplace=True)
@@ -52,11 +52,11 @@ print(f"X_train's shape: {X_train.shape}")
 print(f"X_valid's shape: {X_valid.shape}")
 
 category_columns = [col for col in X_train.columns if X_train[col].dtype == "object"]
-print(f"\n category_columns: {category_columns}")
+# print(f"\n category_columns: {category_columns}")
 
 s = (X_train.dtypes == 'object')
-print(f"type of s: {type(s)}")
-print(f"s: {s}")
+# print(f"type of s: {type(s)}")
+# print(f"s: {s}")
 
 def score_dataset(X_train, X_valid, y_train, y_valid):
     from sklearn.ensemble import RandomForestRegressor
@@ -74,6 +74,43 @@ def drop_categorial_columns(X_train, X_valid, y_train, y_valid, categorial_colum
     mea = score_dataset(drop_X_train, drop_X_valid, y_train, y_valid)
     print(f"drop_categorial_columns' score: {mea}")
 
+def ordinal_encode_test(X_train, X_valid, y_train, y_valid, categorial_columns):
+    from sklearn.preprocessing import OrdinalEncoder
+    ordinal_encoder = OrdinalEncoder()
+
+    categorial_X_train = X_train.copy()
+    categorial_X_valid = X_valid.copy()
+
+    categorial_X_train[category_columns] = ordinal_encoder.fit_transform(categorial_X_train[categorial_columns])
+    categorial_X_valid[categorial_columns] = ordinal_encoder.transform((categorial_X_valid[categorial_columns]))
+
+    mea = score_dataset(categorial_X_train, categorial_X_valid, y_train, y_valid)
+    print(f"ordinal_encode_test score: {mea}")
+
+def one_hot_encode_test(X_train, X_valid, y_train, y_valid, categorial_columns):
+    from sklearn.preprocessing import OneHotEncoder
+    one_hot_encoder = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+
+    categorial_columns_X_train = pd.DataFrame(one_hot_encoder.fit_transform(X_train))
+    categorial_columns_X_valid = pd.DataFrame(one_hot_encoder.transform(X_valid))
+
+    categorial_columns_X_train.index = X_train[categorial_columns].index
+    categorial_columns_X_valid.index = X_valid[categorial_columns].index
+
+    numberial_columns_X_train = X_train.drop(axis=1, labels=categorial_columns, inplace=False)
+    numberial_columns_X_valid = X_valid.drop(axis=1, labels=categorial_columns, inplace=False)
+
+    merged_X_train = pd.concat([categorial_columns_X_train, numberial_columns_X_train], axis=1)
+    merged_X_valid = pd.concat([categorial_columns_X_valid, numberial_columns_X_valid], axis=1)
+
+    merged_X_train.columns = merged_X_train.columns.astype(str)
+    merged_X_valid.columns = merged_X_valid.columns.astype(str)
+
+    mae = score_dataset(merged_X_train, merged_X_valid, y_train, y_valid)
+    print(f"one_hot_encode_test score: {mae}")
 
 if "__main__" == __name__:
+    # ordinal_encode_test(X_train, X_valid, y_train_full, y_valid_full, category_columns)
     drop_categorial_columns(X_train, X_valid, y_train_full, y_valid_full, category_columns)
+    ordinal_encode_test(X_train, X_valid, y_train_full, y_valid_full, category_columns)
+    one_hot_encode_test(X_train, X_valid, y_train_full, y_valid_full, category_columns)
