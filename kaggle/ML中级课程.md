@@ -70,4 +70,10 @@
       - 对数据进行进一步处理：列名统一为字符串（因为经过OneHotEncoder处理后，列名会变成数字）
         - one_handle_X_train.columns = one_handle_X_train.columns.astype(str)
         - one_handle_X_valid.columns = one_handle_X_valid.columns.astype(str)
-      - 
+
+### 4. pipelines(流水线)
+- 定义：用预处理技术对复杂模型进行部署及测试
+- 作用：优化建模代码
+  - 更好的组织代码，包括：预处理，建模，将这些步骤捆绑在一起，使得像是一个步骤
+- 构建流水线
+- 
