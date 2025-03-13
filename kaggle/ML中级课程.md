@@ -77,9 +77,32 @@
   - 更好的组织代码，包括：预处理，建模，将这些步骤捆绑在一起，使得像是一个步骤
 - 构建流水线
   - 第1步：定义预处理的步骤
-    - 用ColumnTransformer类：以捆绑不同的预处理步骤
+    - ColumnTransformer类：用以捆绑不同的预处理步骤
+      - 每个元组定义一组处理：(名称, 转换器, 列名或列索引)
+      - 参数说明
+        - transformer: 转换器列表
+        - remainder: 对未选中的列的处理方式，'passthrough'（保留），'drop'（丢弃）
       - 例如：
         - 填充缺失的数值型数据
         - 填充缺失的分类型数据，并进行独热编码（one hot encode）
+    - Pipeline类
+      - 通过steps参数定义流水线步骤，每个步骤是一个元组(name, transformer/estimator) ==》 (步骤名称, 转换器或模型)
+      - 将多个数据处理步骤和机器学习模型串联起来，形成一个工作流
+      - 每一步的输出是下一步的输入
     - 代码示例
-      - 
+      - from sklearn.compose import ColumnTransformer
+      - from sklearn.pipeline import Pipeline
+      - numerical_transformer = SimpleImputer(strategy="constant")
+      - categorical_transformer = Pipeline(steps=[
+        - ("imputer", SimpleImputer(strategy="most_frequent")),
+        - ("onebot", OneHotEncoder(handle_unknown="ignore"))
+      - ])
+      - preprocessor = ColumnTransformer(
+        - transformers = [
+          ("num", numerical_transformer, numerical_cols),
+        - ("cat", categorical_transformer, categorical_cols)
+        - ]
+        - )
+  - 第2步：定义模型
+  - 第3步：创建并评估流水线
+    - 用Pipeline类来定义流水线：打包预处理和模型化步骤
