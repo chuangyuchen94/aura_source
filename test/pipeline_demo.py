@@ -160,7 +160,7 @@ if "__main__" == __name__:
 
     # 分别出去数值特征列和分类特征列
     num_cols = [col for col in X_train.columns if X_train[col].dtype in ["int64", "float64"]]
-    cat_cols = [col for col in X_train.columns if X_train[col].dtype == "object"]
+    cat_cols = [col for col in X_train.columns if X_train[col].dtype == "object" and X_train[col].nunique() < 10]
 
     pipeline = data_preprocess_modeling(num_cols, cat_cols)
     pipeline.fit(X_train, y_train_full)
