@@ -137,4 +137,5 @@
 
 ### 6. XGBoost
 - XGBoost：对于结构化数据的最精准的建模技术
+- 用梯度提升（gradient boosting）的方法，来创建并优化模型
 - 
