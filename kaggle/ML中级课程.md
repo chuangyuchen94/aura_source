@@ -134,3 +134,7 @@
     - estimator: 实现了fit和predict的模型对象
     - cv: 来设置数据以多少份来分
     - scoring: 评估指标名称或函数，如，"accuracy"、"neg_mean_absolute_error"、"neg_mean_squared_error"
+
+### 6. XGBoost
+- XGBoost：对于结构化数据的最精准的建模技术
+- 
