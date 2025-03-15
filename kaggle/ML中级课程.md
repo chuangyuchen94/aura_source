@@ -138,4 +138,40 @@
 ### 6. XGBoost
 - XGBoost：对于结构化数据的最精准的建模技术
 - 用梯度提升（gradient boosting）的方法，来创建并优化模型
-- 
+- 集成方法（ensemble method）：组合了多种模型的预测
+  - 例如，随机森林，梯度提升
+- 梯度提升
+  - 定义：一种循环迭代的将模型加入到集成中的方法
+  - 过程
+    - 从初始化集成开始：加入一个模型
+    - 开始循环
+      - 用当前的集成，来生成预测
+      - 用损失函数（loss function）来运算预测值
+      - 用损失函数来训练新的模型，然后将其加入到集成中
+        - 特别的，通过调整模型的参数，来降低损失
+      - 重复以上步骤
+  - XGBoost库: xgboost
+  - 代码示例
+    - from xgboost import XGBRegressor
+    - my_model = XGBRegressor()
+    - my_model.fit(X_train, y_train)
+    - my_model.predict(X_valid)
+  - 参数调优
+    - `n_estimators`: 指定执行多少次建模循环，等同于集成中的模型数量
+      - 太低，容易导致欠拟合；
+      - 太高，容易导致过拟合
+      - 典型的值：100~1000，且依赖于learning_rate参数
+    - `early_stopping_rounds`: 提供一种方法，以自动的找到n_estimators的理想值
+      - 当验证的分数恶化时，early_stopping_rounds指定了，在连续出现多少次验证得分不再提升时，停止迭代
+      - 通常来说，设定高的n_estimators，然后用early_stopping_rounds来找到最优n_estimators
+    - 代码示例
+      - my_model = XGBRegressor(n_estimators=1000, early_stopping_rounds=5)
+    - `learning_rate`: 在将每个模型的预测相加前，先用learning_rate进行乘积
+      - 默认情况下，XGBoost将learning_rate设置为0.1
+    - 代码示例
+      - my_model = XGBRegressor(n_estimators=1000, learning_rate=0.05)
+    - `n_jobs`: 指定并发任务数，用以更快的构建模型
+      - 通常情况下，将n_jobs设置为机器的核心数
+    - 代码示例
+      - my_model = XGBRegressor(n_estimators=1000, learning_rate=0.05, n_jobs=4)
+    - 
