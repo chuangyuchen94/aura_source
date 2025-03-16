@@ -174,4 +174,9 @@
       - 通常情况下，将n_jobs设置为机器的核心数
     - 代码示例
       - my_model = XGBRegressor(n_estimators=1000, learning_rate=0.05, n_jobs=4)
-    - 
+
+### 7. 数据泄露（Data Leakage）
+- 定义：因为意外或错误，在训练时，让模型接触到了未来信息或测试集的信息，导致模型的测试结果偏高，而实际预测时，结果就不准确
+- 有两种类型的泄露
+  - target leakage(目标泄露)
+  - train-test contamination(训练-测试污染)
