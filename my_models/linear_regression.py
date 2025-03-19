@@ -105,5 +105,9 @@ class MYLinearRregression:
         ss_res = (y_true - y_pred).T.dot(y_true - y_pred)
         y_true_mean = y_true.mean()
         ss_tot = (y_true - y_true_mean).T.dot(y_true - y_true_mean)
+        if ss_tot == 0:
+            return 0
 
-        return 1 - ss_res / ss_tot
+        r2_value = 1 - ss_res / ss_tot
+
+        return r2_value[0][0]

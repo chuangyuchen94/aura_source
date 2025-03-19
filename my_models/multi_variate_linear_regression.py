@@ -138,4 +138,4 @@ plotly.offline.plot(plot_figure)
 
 y_pred = linear_regression.predict(x_test)
 r2_value = MYLinearRregression.calc_r2(y_test, y_pred)
-print(f"R^2值为：{r2_value[0][0]}")
+print(f"R^2值为：{r2_value}")
