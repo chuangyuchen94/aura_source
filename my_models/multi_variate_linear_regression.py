@@ -135,3 +135,7 @@ plot_predictions_trace = go.Scatter3d(
 plot_data = [plot_training_trace, plot_test_trace, plot_predictions_trace]
 plot_figure = go.Figure(data=plot_data, layout=plot_layout)
 plotly.offline.plot(plot_figure)
+
+y_pred = linear_regression.predict(x_test)
+r2_value = MYLinearRregression.calc_r2(y_test, y_pred)
+print(f"R^2值为：{r2_value[0][0]}")

@@ -93,3 +93,17 @@ class MYLinearRregression:
         :return:
         """
         return self.loss_values
+
+    @staticmethod
+    def calc_r2(y_true, y_pred):
+        """
+        计算R^2分数
+        :param y_true: 真实值
+        :param y_pred: 预测值
+        :return: R^2值
+        """
+        ss_res = (y_true - y_pred).T.dot(y_true - y_pred)
+        y_true_mean = y_true.mean()
+        ss_tot = (y_true - y_true_mean).T.dot(y_true - y_true_mean)
+
+        return 1 - ss_res / ss_tot
