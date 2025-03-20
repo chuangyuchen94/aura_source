@@ -181,3 +181,5 @@
   - target leakage(目标泄露)
     - 特征列中，包含了与目标值直接相关的信息
   - train-test contamination(训练-测试污染)
+    - 例如：在train_test_split之前，对数据进行了预处理
+    - 
