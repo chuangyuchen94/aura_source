@@ -6,7 +6,7 @@ class MyLogisticRegression:
     对于逻辑回归的理解：
     1、特征值X（[m, n]，m行样本值，n列特征），标签值y（有限的枚举值，[m, 1]，对应m行样本值的分类，分类只有1列）==> 对应二元分类;
     2、逻辑回归的本质：找到特征值X与标签值y的映射关系（线性组合）; 接着，再通过sigmoid函数，将X到y的线性组合的输出a，转换为[0, 1]之间的值b;
-        1）X与y之间的线性组合，表现为θ的转置与X的点乘积：y=θ^T@X ;
+        1）X与y之间的线性组合，表现为θ的转置与X的点乘积：y=X@T ;
         2）将y值通过sigmoid函数进行映射：z=1/(1+e^(-y)) ;
         3）通过阈值，来将值z分为类别0或1
         4）定义损失函数
@@ -24,12 +24,13 @@ class MyLogisticRegression:
         :return:
         """
         size = X_train.shape[0]
-        theta = np.random.randn(size, 1)
+        X_train_extend = np.hstack((np.ones((size, 1)), X_train))
+        theta = np.random.randn(size)
 
         res = minimize(
             fun = MyLogisticRegression.loss_function, # 进行最小化的目标函数：损失函数
             x0 = theta, # 初始化参数θ
-            args = (X_train, y_train), # 训练集数据
+            args = (X_train_extend, y_train), # 训练集数据
             method = 'CG', # 优化方法
             jac = MyLogisticRegression.gradient_value, # 用于计算梯度向量的方法
         )
@@ -53,7 +54,7 @@ class MyLogisticRegression:
         sigmoid方法
         :return:
         """
-        sigmoid_value = 1 / (1 + np.exp(-theta.T.dot(X)))
+        sigmoid_value = 1 / (1 + np.exp(-X.dot(theta)))
         return sigmoid_value
 
     @staticmethod
