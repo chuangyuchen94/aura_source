@@ -20,7 +20,7 @@ class MyLogisticRegression:
     def __init__(self, max_iter=1000):
         self.theta = None # 参数θ
         self.y_dict = None # 标签值y的映射字典 {"枚举值": 索引值}
-        self.theta_dict = None # 参数θ的映射字典 {"枚举值": θ}
+        self.theta_dict = {} # 参数θ的映射字典 {"枚举值": θ}
         self.max_iter = max_iter # 最大迭代次数
 
     def fit(self, X_train, y_train):
@@ -29,7 +29,7 @@ class MyLogisticRegression:
         :return:
         """
         size = X_train.shape[0]
-        X_train_extend = np.hstack((np.ones((size, 1)), X_train))
+        X_train_extend = MyLogisticRegression.scalar_X(X_train)
         y_train_scaler, self.y_dict = MyLogisticRegression.scaler_y(y_train)
 
         # 将多元分类切割成多个二元分类的逻辑：每次的二元逻辑回归，对于当前枚举值而言，将其当做1，其他当做0，总共要切割枚举值个数的次数
@@ -37,14 +37,18 @@ class MyLogisticRegression:
             index = self.y_dict[enum_value]
             y_train_extend = np.array(y_train_scaler.copy() == index).reshape(size, )
             theta = self.two_dim_classification(X_train=X_train_extend, y_train=y_train_extend)
-            self.theta_dict[enum_value] = theta
+            self.theta_dict[enum_value] = theta.copy()
 
     def predict(self, X):
         """
         预测方法
         :return:
         """
-        pass
+        for enum_value in self.theta_dict.keys():
+            theta = self.theta_dict[enum_value]
+            X_extend = MyLogisticRegression.scalar_X(X)
+            y_predict = MyLogisticRegression.sigmoid(X_extend, theta)
+
 
     def two_dim_classification(self, X_train, y_train):
         """
@@ -121,3 +125,12 @@ class MyLogisticRegression:
             y_dict[value] = index
 
         return scaler_y, y_dict
+
+    @staticmethod
+    def scalar_X(X):
+        """
+        在X的最前面（第0列之前）加上一列，值全为1，作为截距项
+        :param X:
+        :return:
+        """
+        return np.hstack((np.ones((X.shape[0], 1)), X))
