@@ -17,10 +17,11 @@ class MyLogisticRegression:
     4、数据预处理
         1）标签值y，如果不为int值，要将其映射为int
     """
-    def __init__(self):
+    def __init__(self, max_iter=1000):
         self.theta = None # 参数θ
         self.y_dict = None # 标签值y的映射字典 {"枚举值": 索引值}
         self.theta_dict = None # 参数θ的映射字典 {"枚举值": θ}
+        self.max_iter = max_iter # 最大迭代次数
 
     def fit(self, X_train, y_train):
         """
