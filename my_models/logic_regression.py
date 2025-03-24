@@ -35,7 +35,7 @@ class MyLogisticRegression:
         # 将多元分类切割成多个二元分类的逻辑：每次的二元逻辑回归，对于当前枚举值而言，将其当做1，其他当做0，总共要切割枚举值个数的次数
         for enum_value in self.y_dict.keys():
             index = self.y_dict[enum_value]
-            y_train_extend = np.array(y_train_scaler.copy() == index).reshape(size, 1)
+            y_train_extend = np.array(y_train_scaler.copy() == index).reshape(size, )
             theta = self.two_dim_classification(X_train=X_train_extend, y_train=y_train_extend)
             self.theta_dict[enum_value] = theta
 
@@ -96,6 +96,10 @@ class MyLogisticRegression:
         计算梯度值
         :return:
         """
+        print(f"gradient_value is calling!!!")
+        print(f"theta: {theta}")
+        print(f"X: {X}")
+        print(f"y: {y}")
         sigmoid_value = MyLogisticRegression.sigmoid(X, theta)
         size = X.shape[0]
         gradient_value = 1 / size * X.T.dot(sigmoid_value - y)
