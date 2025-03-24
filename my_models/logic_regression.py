@@ -13,10 +13,14 @@ class MyLogisticRegression:
         5）通过梯度下降来优化参数θ：用scipy.optimize.minimize方法，实现梯度下降的效果
     3、其他
         1）计算梯度值
+        2）对于多分类问题，使用softmax函数会更好，不过，这里暂且考虑用多个二分类来实现
+    4、数据预处理
+        1）标签值y，如果不为int值，要将其映射为int
     """
     def __init__(self):
-        self.theta = None
-        pass
+        self.theta = None # 参数θ
+        self.y_dict = None # 标签值y的映射字典 {"枚举值": 索引值}
+        self.theta_dict = None # 参数θ的映射字典 {"枚举值": θ}
 
     def fit(self, X_train, y_train):
         """
@@ -25,21 +29,14 @@ class MyLogisticRegression:
         """
         size = X_train.shape[0]
         X_train_extend = np.hstack((np.ones((size, 1)), X_train))
-        theta = np.random.randn(size)
+        y_train_scaler, self.y_dict = MyLogisticRegression.scaler_y(y_train)
 
-        res = minimize(
-            fun = MyLogisticRegression.loss_function, # 进行最小化的目标函数：损失函数
-            x0 = theta, # 初始化参数θ
-            args = (X_train_extend, y_train), # 训练集数据
-            method = 'CG', # 优化方法
-            jac = MyLogisticRegression.gradient_value, # 用于计算梯度向量的方法
-        )
-
-        if not res.success:
-            print(f"minimize failed, cause: {res.message}")
-        else:
-            print(f"minimize success, theta: {res.x}")
-            self.theta = res.x
+        # 将多元分类切割成多个二元分类的逻辑：每次的二元逻辑回归，对于当前枚举值而言，将其当做1，其他当做0，总共要切割枚举值个数的次数
+        for enum_value in self.y_dict.keys():
+            index = self.y_dict[enum_value]
+            y_train_extend = np.array(y_train_scaler.copy() == index).reshape(size, 1)
+            theta = self.two_dim_classification(X_train=X_train_extend, y_train=y_train_extend)
+            self.theta_dict[enum_value] = theta
 
     def predict(self, X):
         """
@@ -47,6 +44,29 @@ class MyLogisticRegression:
         :return:
         """
         pass
+
+    def two_dim_classification(self, X_train, y_train):
+        """
+        实现二元的逻辑回归分类
+        :return:
+        """
+        theta = np.random.randn(X_train.shape[1])
+
+        res = minimize(
+            fun=MyLogisticRegression.loss_function,  # 进行最小化的目标函数：损失函数
+            x0=theta,  # 初始化参数θ
+            args=(X_train, y_train),  # 训练集数据
+            method='CG',  # 优化方法
+            jac=MyLogisticRegression.gradient_value,  # 用于计算梯度向量的方法
+        )
+
+        if not res.success:
+            print(f"minimize failed, cause: {res.message}")
+            raise Exception(f"minimize failed: {res.message}")
+        else:
+            print(f"minimize success, theta: {res.x}")
+            return res.x
+
 
     @staticmethod
     def sigmoid(X, theta):
@@ -80,3 +100,19 @@ class MyLogisticRegression:
         gradient_value = 1 / size * X.T.dot(sigmoid_value - y)
 
         return gradient_value
+
+    @staticmethod
+    def scaler_y(y):
+        """
+        将y映射为int枚举值
+        :return:
+        """
+        scaler_y = y.copy()
+        unique_value = np.unique(y)
+        y_dict = {}
+
+        for index, value in enumerate(unique_value):
+            scaler_y[scaler_y == value] = index
+            y_dict[value] = index
+
+        return scaler_y, y_dict
