@@ -29,5 +29,5 @@ if "__main__" == __name__:
     logistic_model.fit(X_train, y_train)
     y_pred = logistic_model.predict(X_test)
 
-    mea = mean_absolute_error(y_test, y_pred)
+    mea = sum(y_test.reshape(y_test.shape[0]) == y_pred) / len(y_test) * 100
     print(f"predict precision: {mea}")
