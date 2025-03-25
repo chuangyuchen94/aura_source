@@ -83,24 +83,27 @@ class MyLogisticRegression:
         :return:
         """
         theta = np.random.randn(X_train.shape[1])
+        n_features = X_train.shape[1]
 
         res = minimize(
             fun=self.loss_function,  # 进行最小化的目标函数：损失函数
             x0=theta,  # 初始化参数θ
             args=(X_train, y_train),  # 训练集数据
-            method='CG',  # 优化方法
+            method='L-BFGS-B',  # 优化方法
             jac=self.gradient_value,  # 用于计算梯度向量的方法
+            bounds=[(None, None)] * n_features,  # 无边界时可省略
             options={
                     "maxiter": self.max_iter,
                     "gtol": 1e-6,
                     "disp": True},
+            callback=self.callback_fun
         )
 
         if not res.success:
             print(f"minimize failed, cause: {res.message}")
             raise Exception(f"minimize failed: {res.message}")
         else:
-            print(f"minimize success, theta: {res.x}")
+            print(f"***** minimize success, \n    theta: {res.x}\n    loss value: {res.fun}\n    目标函数调用次数:{res.nfev}")
             return res.x
 
 
@@ -169,3 +172,11 @@ class MyLogisticRegression:
         :return:
         """
         return np.hstack((np.ones((X.shape[0], 1)), X))
+
+    def callback_fun(self, xk):
+        """
+        定义回调函数
+        :param xk:
+        :return:
+        """
+        print(f"当前迭代：{type(xk)}|值：{xk}")
