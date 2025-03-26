@@ -1,4 +1,3 @@
-import numpy
 import numpy as np
 from scipy.optimize import minimize
 
@@ -82,7 +81,8 @@ class MyLogisticRegression:
         实现二元的逻辑回归分类
         :return:
         """
-        theta = np.random.randn(X_train.shape[1])
+        num_of_features = X_train.shape[1]
+        theta = np.random.randn(num_of_features) * np.sqrt(2.9 / (num_of_features + 1))
         n_features = X_train.shape[1]
 
         res = minimize(
