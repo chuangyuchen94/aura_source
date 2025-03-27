@@ -13,6 +13,8 @@ class MyKMeansCluster:
         self.k_estimator = k_estimator
         self.standard_tranformer = None
         self.min_max_transformer = None
+        self.center_points = {}  # 用于保存质心
+
 
 
     def fit(self, X):
@@ -21,7 +23,8 @@ class MyKMeansCluster:
 
         # 初始化质心
         center_point = self.init_cluster_center(X_train)
-        cluster()
+        # 分配数据点到质心
+        self.cluster(X, center_point)
 
     def predict(self, X):
         pass
@@ -29,6 +32,7 @@ class MyKMeansCluster:
     def cluster(self, X, init_center_point):
         """
         步骤1：分配数据点到其最近的质心
+            方法：计算每个数据点到每个质心的距离，距离最小的那个，就是最近的质心，同时，将这个数据点的簇的标识更新为新的质心
         步骤2：更新质心
         步骤3：判断收敛
         :param X:
@@ -45,6 +49,13 @@ class MyKMeansCluster:
         :param center_point_all:
         :return:
         """
+        k_cluster_dict = {}
+
+        for center_point in center_point_all:
+            distance_double, distance = MyKMeansCluster.calc_distance_to_center(X, center_point)
+            k_cluster_dict[center_point] = distance_double, distance
+
+        return max(k_cluster_dict, key=lambda x: k_cluster_dict.get(x)[1])
 
     def train_data_preprocess(self, X):
         """
@@ -81,7 +92,7 @@ class MyKMeansCluster:
         index_all.append(first_index)
 
         # 初始化其他质心
-        for _ in range(self.k_estimator - 1):
+        for center_index in range(self.k_estimator - 1):
             mask = np.ones(X.shape[0], dtype=bool)
             mask[index_all] = False
             available_X = X[mask]
@@ -91,9 +102,11 @@ class MyKMeansCluster:
             for data_index in range(available_X.shape[0]):
                 distance = MyKMeansCluster.calc_distance_to_center(available_X.iloc[data_index], center_point_all)
                 distance_to_center[data_index] = distance
+
             new_center_index = max(distance_to_center, key=distance_to_center.get)
             index_all.append(new_center_index)
             center_point_all.append(available_X.iloc[new_center_index])
+            self.center_points[center_index] = available_X.iloc[new_center_index]
 
         return center_point_all
 
