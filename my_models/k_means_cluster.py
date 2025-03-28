@@ -22,7 +22,7 @@ class MyKMeansCluster:
         X_train = self.train_data_preprocess(X)
 
         # 初始化质心
-        center_point = self.init_cluster_center(X_train)
+        center_point = self.init_cluster_center(X)
 
         for _ in range(self.max_iter):
             # 分配数据点到质心
@@ -32,25 +32,27 @@ class MyKMeansCluster:
             new_center = self.update_center(X, data_labels)
 
             # 判断收敛：计算新旧质心的距离，若小于指定阈值，则认为已经收敛
-            distance_changed = self.distance_to_center(new_center, self.center_points)
+            distance_changed = self.distance_to_center(new_center, self.center_points)[0]
             min_distance = np.min(distance_changed, axis=1)
+
+            self.call_back(center_point, data_labels, min_distance)
 
             self.center_points = new_center.copy()
             self.data_labels = data_labels.copy()
             center_point = new_center
 
-            if self.callback is not None:
-                self.callback(new_center, data_labels, min_distance)
-
             mean_distance = np.mean(min_distance)
             if mean_distance < self.minimal_distance:
                 print("K-MEANS算法收敛")
-                if self.callback is not None:
-                    self.callback(new_center, data_labels, min_distance)
+                self.call_back(center_point, data_labels, min_distance)
                 return
             else:
                 print("K-MEANS算法未收敛")
 
+
+    def call_back(self, new_center, data_labels, min_distance):
+        if self.callback is not None:
+            self.callback(new_center, data_labels, min_distance)
 
     def predict(self, X):
         pass
@@ -83,7 +85,7 @@ class MyKMeansCluster:
         :return:
         """
         # 计算每个数据点到质心的距离
-        distance = self.distance_to_center(X, center_point)
+        distance = self.distance_to_center(X, center_point)[0]
         # min_distance = np.min(distance, axis=1)
         cluster_labels = np.argmin(distance, axis=1)
 
@@ -102,12 +104,10 @@ class MyKMeansCluster:
         diag_X = np.diag(X.dot(X.T)).reshape(X.shape[0], 1)
         diag_C = np.diag(center_points.dot(center_points.T)).reshape(center_points.shape[0], 1)
 
-        distance = np.sqrt(
-            np.sum(X ** 2, axis=1, keepdims=True)
-            - 2 * X @ center_points.T
-            + np.sum(center_points ** 2, axis=1)
-        )
-        return distance
+        distance_double = np.sum(X ** 2, axis=1, keepdims=True) - 2 * X @ center_points.T + np.sum(center_points ** 2, axis=1)
+        distance = np.sqrt(distance_double)
+
+        return distance, distance_double
 
     def get_belong_cluster(self, X, center_point_all):
         """
@@ -140,27 +140,31 @@ class MyKMeansCluster:
 
         return X_standard_min_max
 
-    def init_cluster_center(self, X):
+    def init_cluster_center(self, X_all):
         """
         初始化质心
         :param X:
         :return:
         """
         # 第一个质心
-        first_index = np.random.randint(0, X.shape[0])
-        first_center = X[first_index]
+        first_index = np.random.randint(0, X_all.shape[0])
+        first_center = X_all[first_index]
         center_point_all = np.array([first_center])
 
         # 初始化其他质心
         for center_index in range(self.k_estimator - 1):
             # 找出除了质心数据点之外的数据点，离当前质心最近的数据点，并计算其距离，找出其中的最大值，作为新的质心
-            distance_matrix = self.distance_to_center(X, center_point_all)
+            distance_matrix = self.distance_to_center(X_all, center_point_all)[0]
             min_distance = np.min(distance_matrix, axis=1)
             max_of_mins = max(min_distance)
 
+            # 概率选择（距离平方的概率分布）
+            probs = min_distance ** 2 / np.sum(min_distance ** 2)
+            chosen_idx = np.random.choice(X_all.shape[0], p=probs)
+
             new_center_index = np.where(min_distance == max_of_mins)[0]
-            new_center_point = X[new_center_index].reshape(1, -1)
-            center_point_all = np.concatenate([center_point_all, new_center_point])
+            new_center_point = X_all[new_center_index].reshape(1, -1)
+            center_point_all = np.concatenate([center_point_all.copy(), new_center_point])
 
         self.center_points = center_point_all
 

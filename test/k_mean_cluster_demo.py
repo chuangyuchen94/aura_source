@@ -42,10 +42,11 @@ def show_cluster(centers, cluster_labels, distance):
             label='Centers'
         )
 
-    plt.title(f"distance={distance}")
+    plt.title(f"distance={distance}|{centers}")
     plt.legend()
     plt.show()
 
 k_means_model = MyKMeansCluster(k_estimator=3, callback=show_cluster)
+# k_means_model = MyKMeansCluster(k_estimator=3)
 k_means_model.fit(data)
 
