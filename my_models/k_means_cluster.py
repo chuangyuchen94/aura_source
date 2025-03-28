@@ -5,17 +5,17 @@ class MyKMeansCluster:
     """
     实现K-MEANS聚类算法
     """
-    def __init__(self, k_estimator):
+    def __init__(self, k_estimator, max_iter=100, minimal_distance=0.001, callback=None):
         """
         K-MEANS算法的实现
         :param k_estimator:预先指定的簇个数
         """
+        self.data_labels = None # 数据点的标签
         self.k_estimator = k_estimator
-        self.standard_tranformer = None
-        self.min_max_transformer = None
-        self.center_points = {}  # 用于保存质心
-
-
+        self.center_points = None  # 用于保存质心
+        self.minimal_distance = minimal_distance
+        self.max_iter = max_iter
+        self.callback = callback # 回调函数，在每次迭代后调用
 
     def fit(self, X):
         # 对数据进行预处理，包括：标准化、归一化
@@ -23,24 +23,91 @@ class MyKMeansCluster:
 
         # 初始化质心
         center_point = self.init_cluster_center(X_train)
-        # 分配数据点到质心
-        self.cluster(X, center_point)
+
+        for _ in range(self.max_iter):
+            # 分配数据点到质心
+            data_labels = self.cluster(X, center_point)
+
+            # 更新质心：按照标签找到簇，计算簇所包含的数据点的均值，作为新的质心
+            new_center = self.update_center(X, data_labels)
+
+            # 判断收敛：计算新旧质心的距离，若小于指定阈值，则认为已经收敛
+            distance_changed = self.distance_to_center(new_center, self.center_points)
+            min_distance = np.min(distance_changed, axis=1)
+
+            self.center_points = new_center.copy()
+            self.data_labels = data_labels.copy()
+            center_point = new_center
+
+            if self.callback is not None:
+                self.callback(new_center, data_labels, min_distance)
+
+            mean_distance = np.mean(min_distance)
+            if mean_distance < self.minimal_distance:
+                print("K-MEANS算法收敛")
+                if self.callback is not None:
+                    self.callback(new_center, data_labels, min_distance)
+                return
+            else:
+                print("K-MEANS算法未收敛")
+
 
     def predict(self, X):
         pass
 
-    def cluster(self, X, init_center_point):
+    def update_center(self, X, data_labels):
+        """
+        更新质心
+        :param X:
+        :param data_labels:
+        :return:
+        """
+        new_centers = []
+
+        labels = np.unique(data_labels)
+        for label in labels:
+            cluster_data = X[data_labels == label]
+            new_center_point = np.mean(cluster_data, axis=0)
+            new_centers.append(new_center_point.copy())
+
+        return np.array(new_centers)
+
+    def cluster(self, X, center_point):
         """
         步骤1：分配数据点到其最近的质心
             方法：计算每个数据点到每个质心的距离，距离最小的那个，就是最近的质心，同时，将这个数据点的簇的标识更新为新的质心
         步骤2：更新质心
         步骤3：判断收敛
         :param X:
-        :param init_center_point:
+        :param center_point:
         :return:
         """
-        k_cluster_dict = {}
+        # 计算每个数据点到质心的距离
+        distance = self.distance_to_center(X, center_point)
+        # min_distance = np.min(distance, axis=1)
+        cluster_labels = np.argmin(distance, axis=1)
 
+        return cluster_labels
+
+    def distance_to_center(self, X, center_points):
+        """
+        计算数据点到质心的距离: ‖x - c‖² = ‖x‖² - 2x·c + ‖c‖²
+        :param X:
+        :param center_points:
+        :return:
+        """
+        all_one_k = np.ones((self.k_estimator, 1))
+        all_one_features = np.ones((X.shape[0], 1))
+
+        diag_X = np.diag(X.dot(X.T)).reshape(X.shape[0], 1)
+        diag_C = np.diag(center_points.dot(center_points.T)).reshape(center_points.shape[0], 1)
+
+        distance = np.sqrt(
+            np.sum(X ** 2, axis=1, keepdims=True)
+            - 2 * X @ center_points.T
+            + np.sum(center_points ** 2, axis=1)
+        )
+        return distance
 
     def get_belong_cluster(self, X, center_point_all):
         """
@@ -71,9 +138,6 @@ class MyKMeansCluster:
         min_max_transformer = MinMaxScaler(feature_range=(0, 1))
         X_standard_min_max = min_max_transformer.fit_transform(X_standard)
 
-        self.standard_tranformer = standard_tranformer
-        self.min_max_transformer = min_max_transformer
-
         return X_standard_min_max
 
     def init_cluster_center(self, X):
@@ -82,31 +146,23 @@ class MyKMeansCluster:
         :param X:
         :return:
         """
-        center_point_all = []
-        index_all = []
-
         # 第一个质心
         first_index = np.random.randint(0, X.shape[0])
         first_center = X[first_index]
-        center_point_all.append(first_center)
-        index_all.append(first_index)
+        center_point_all = np.array([first_center])
 
         # 初始化其他质心
         for center_index in range(self.k_estimator - 1):
-            mask = np.ones(X.shape[0], dtype=bool)
-            mask[index_all] = False
-            available_X = X[mask]
+            # 找出除了质心数据点之外的数据点，离当前质心最近的数据点，并计算其距离，找出其中的最大值，作为新的质心
+            distance_matrix = self.distance_to_center(X, center_point_all)
+            min_distance = np.min(distance_matrix, axis=1)
+            max_of_mins = max(min_distance)
 
-            # 找出除了质心数据点之外的数据点，离当前质心最近的数据点，并计算器距离，找出其中的最大值，作为新的质心
-            distance_to_center = {}
-            for data_index in range(available_X.shape[0]):
-                distance = MyKMeansCluster.calc_distance_to_center(available_X.iloc[data_index], center_point_all)
-                distance_to_center[data_index] = distance
+            new_center_index = np.where(min_distance == max_of_mins)[0]
+            new_center_point = X[new_center_index].reshape(1, -1)
+            center_point_all = np.concatenate([center_point_all, new_center_point])
 
-            new_center_index = max(distance_to_center, key=distance_to_center.get)
-            index_all.append(new_center_index)
-            center_point_all.append(available_X.iloc[new_center_index])
-            self.center_points[center_index] = available_X.iloc[new_center_index]
+        self.center_points = center_point_all
 
         return center_point_all
 
