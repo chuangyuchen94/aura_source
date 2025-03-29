@@ -105,6 +105,7 @@ class MyKMeansCluster:
         diag_C = np.diag(center_points.dot(center_points.T)).reshape(center_points.shape[0], 1)
 
         distance_double = np.sum(X ** 2, axis=1, keepdims=True) - 2 * X @ center_points.T + np.sum(center_points ** 2, axis=1)
+        distance_double = np.maximum(distance_double, 0)
         distance = np.sqrt(distance_double)
 
         return distance, distance_double
