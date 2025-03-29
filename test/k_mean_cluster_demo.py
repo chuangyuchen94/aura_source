@@ -10,13 +10,14 @@ data_part2 = np.random.randn(size, 2) + np.array([6, 4])
 data_part3 = np.random.randn(size, 2) + np.array([2, 6])
 data = np.concatenate((data_part1, data_part2, data_part3), axis=0)
 
-# plt.figure(figsize=(5, 5))
+plt.figure(figsize=(10, 6))
 plt.scatter(data[:,0], data[:,1], s=5)
 plt.xlabel(xlabel="x")
 plt.ylabel(ylabel="y")
 plt.show()
 
 def show_cluster(centers, cluster_labels, distance):
+    plt.figure(figsize=(10, 6))
     plt.xlabel(xlabel="x")
     plt.ylabel(ylabel="y")
 
