@@ -2,6 +2,7 @@ from sklearn.datasets import make_blobs
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 
 centers = [
     [0.2, 2.3],
@@ -65,17 +66,27 @@ plt.show()
 
 # 测试不同k值对应的评估值
 inertias = []
-for k in range(1, 21):
+sil_scores = []
+for k in range(2, 21):
     kmean_model = KMeans(n_clusters=k)
     kmean_model.fit(X)
     inertias.append(kmean_model.inertia_)
+    sil_scores.append(silhouette_score(X, kmean_model.labels_))
 
-plt.plot(range(1, 21), inertias)
+plt.plot(range(2, 21), inertias)
 plt.rcParams['font.sans-serif'] = ['Hiragino Sans GB']  # 示例用雅黑字体
 plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示异常
 plt.xlabel("k值")
 plt.ylabel("评估值：距离")
 plt.title("不同k值的评估值变化情况")
+plt.show()
+
+plt.plot(range(2, 21), sil_scores)
+plt.rcParams['font.sans-serif'] = ['Hiragino Sans GB']  # 示例用雅黑字体
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示异常
+plt.xlabel("k值")
+plt.ylabel("轮廓系数")
+plt.title("不同k值的轮廓系数变化情况")
 plt.show()
 
 # K-MEANS算法存在的问题
