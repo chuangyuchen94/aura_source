@@ -24,15 +24,15 @@ def create_dataset():
 
 
 class DecisionNode:
-    def __init__(self, feature_index=None, slice_method=None, enum_values=None, slice_value=None):
+    def __init__(self, feature_index=None, slice_method=None, enum_values=None, slice_value=None, target_value=None):
         self.feature_index = feature_index # 节点的索引
         self.slice_method = slice_method   # 切割下级的方法：E-按枚举，C-按连续值
         self.enum_values = enum_values     # 枚举值列表
         self.slice_value = slice_value     # 切割值
         self.next_node = {}                # 切割逻辑下对应的下级节点
-        self.target_value = None           # 当前节点的标签值
+        self.target_value = target_value           # 当前节点的标签值
 
-    def set_next_node(self, slice_value, sub_node):
+    def set_sub_node(self, slice_value, sub_node):
         """
         根据切分规则，设置下级节点
         :param slice_value:
@@ -64,7 +64,7 @@ class MyDecisionTree:
         # 找到根节点
         root_feature_index, root_entropy_value = self.find_best_feature(X, y, [])
         root_feature_value = np.unique(X[:, root_feature_index])
-        self.root_node = DecisionNode(feature_index=root_feature_index, slice_method="E", enum_values=root_feature_value)
+        self.root_node = DecisionNode(feature_index=root_feature_index, slice_method="E", enum_values=root_feature_value, target_value=y)
 
         # 递归找到下级节点
         # 上级节点的切分值，上级节点的列索引，上级节点
@@ -82,9 +82,13 @@ class MyDecisionTree:
         :param parent_node:
         :return:
         """
+        # 先计算当前节点的熵值
+        self.calc_feature_entropy
+
+        # 找到最优特征
         best_node_current, entropy_value_current = self.find_best_feature(X, y, feature_index_used)
-        current_node = DecisionNode(feature_index=best_node_current, slice_method="E", enum_values=np.unique(X[:, best_node_current]))
-        parent_node.set_next_node(parent_feature_value, current_node)
+        current_node = DecisionNode(feature_index=best_node_current, slice_method="E", enum_values=np.unique(X[:, best_node_current]), target_value=y)
+        parent_node.set_sub_node(parent_feature_value, current_node)
 
         if entropy_value_current < 1e-6:
             return
