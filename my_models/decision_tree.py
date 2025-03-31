@@ -23,13 +23,33 @@ def create_dataset():
     return np.array(data_set), np.array(labels)
 
 
+class DecisionNode:
+    def __init__(self, feature_index=None, slice_method=None, enum_values=None, slice_value=None):
+        self.feature_index = feature_index # 节点的索引
+        self.slice_method = slice_method   # 切割下级的方法：E-按枚举，C-按连续值
+        self.enum_values = enum_values     # 枚举值列表
+        self.slice_value = slice_value     # 切割值
+        self.next_node = {}                # 切割逻辑下对应的下级节点
+        self.target_value = None           # 当前节点的标签值
+
+    def set_next_node(self, slice_value, sub_node):
+        """
+        根据切分规则，设置下级节点
+        :param slice_value:
+        :param node:
+        :return:
+        """
+        self.next_node[slice_value] = sub_node
+
+
 class MyDecisionTree:
     """
     决策树模型
     """
     def __init__(self):
-        self.features_used = [] # 已经使用的特征
-        pass
+        self.root_node = None # 已经使用的特征
+        self.feature_index_all = None # 所有的特征
+
 
     def fit(self, X, y):
         """
@@ -39,13 +59,64 @@ class MyDecisionTree:
         :param y:
         :return:
         """
+        self.feature_index_all = range(X.shape[1])
+
+        # 找到根节点
+        root_feature_index, root_entropy_value = self.find_best_feature(X, y, [])
+        root_feature_value = np.unique(X[:, root_feature_index])
+        self.root_node = DecisionNode(feature_index=root_feature_index, slice_method="E", enum_values=root_feature_value)
+
+        # 递归找到下级节点
+        # 上级节点的切分值，上级节点的列索引，上级节点
+        for feature_label in root_feature_value:
+            slice_index = X[:, root_feature_index] == feature_label
+            X_new = X[slice_index]
+            y_new = y[slice_index]
+            self.build_next_node(root_feature_index, feature_label, [root_feature_index], self.root_node, X_new, y_new)
+
+    def build_next_node(self, parent_feature_index, parent_feature_value, feature_index_used, parent_node, X, y):
+        """
+        根据父节点，构建当前节点
+        :param parent_feature_index:
+        :param parent_feature_value:
+        :param parent_node:
+        :return:
+        """
+        best_node_current, entropy_value_current = self.find_best_feature(X, y, feature_index_used)
+        current_node = DecisionNode(feature_index=best_node_current, slice_method="E", enum_values=np.unique(X[:, best_node_current]))
+        parent_node.set_next_node(parent_feature_value, current_node)
+
+        if entropy_value_current < 1e-6:
+            return
+
+        feature_value_current = np.unique(X[:, best_node_current])
+        for label in feature_value_current:
+            slice_index = X[:, best_node_current] == label
+            X_new = X[slice_index]
+            y_new = y[slice_index]
+            self.build_next_node(best_node_current, label, feature_index_used + [best_node_current], current_node, X_new, y_new)
+
+    def find_best_feature(self, X, y, feature_used):
+        """
+        找出当前节点的最优特征
+        :param X:
+        :param y:
+        :param feather_used:
+        :return:
+        """
         # 找到没被使用的特征，并计算其熵值
-        feature_all = range(X.shape[1])
-        featured_unused = set(feature_all) - set(self.features_used)
+        featured_unused = set(self.feature_index_all) - set(feature_used)
+        entropy_dict = {}
 
         for feature in featured_unused:
-            self.calc_feature_entropy(X, y, feature)
+            entropy_value = self.calc_feature_entropy(X, y, feature)
+            entropy_dict[feature] = entropy_value
 
+        # 熵值最小，相对来说，信息增益值最大
+        best_feature = min(entropy_dict, key=entropy_dict.get)
+        best_entropy_value = entropy_dict[best_feature]
+
+        return best_feature, best_entropy_value
 
     def calc_feature_entropy(self, X, y, feature_index):
         """
@@ -61,7 +132,9 @@ class MyDecisionTree:
         for feature in feature_value:
             y_slice = y[X[:, feature_index] == feature]
             y_slice_entropy = MyDecisionTree.calc_target_entropy(y_slice)
-            entropy_value += y_slice_entropy
+            entropy_value -= y_slice_entropy
+
+        return entropy_value
 
     @staticmethod
     def calc_target_entropy(y):
@@ -80,6 +153,8 @@ class MyDecisionTree:
         :param X:
         :return:
         """
+
+
 
 if "__main__" == __name__:
     data, label = create_dataset()
