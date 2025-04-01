@@ -74,7 +74,8 @@ print(f"After trainning: {random_forest_model_3.feature_importances_.shape}")
 
 def plot_digit(importances):
     image = importances.reshape(28, 28)
-    plt.imshow(image, cmap=matplotlib.cm.hot)
+    im = plt.imshow(image, cmap=matplotlib.cm.hot)
     plt.axis("off")
+    charbar = plt.colorbar(im)
 
-charbar = plt.colorbar([random_forest_model_3.feature_importances_.min(), random_forest_model_3.feature_importances_.max()])
+plot_digit(random_forest_model_3.feature_importances_)
