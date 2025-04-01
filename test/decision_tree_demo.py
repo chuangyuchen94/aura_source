@@ -10,4 +10,5 @@ X_train, X_test, y_train, y_test = train_test_split(X_all, y_all, test_size=0.2,
 
 tree_model = MyDecisionTree()
 tree_model.fit(X_train, y_train)
-tree_model.predict(X_test)
+result = tree_model.predict(X_test)
+print(f"result: {result}")
