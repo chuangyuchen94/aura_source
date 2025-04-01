@@ -12,3 +12,6 @@ tree_model = MyDecisionTree()
 tree_model.fit(X_train, y_train)
 result = tree_model.predict(X_test)
 print(f"result: {result}")
+y_pred = result[:, 0]
+mea = sum(y_pred == y_test) / len(y_test) * 100
+print(f"predict precision: {mea}")
