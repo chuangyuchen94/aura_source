@@ -83,15 +83,18 @@ class MyDecisionTree:
         :return:
         """
         # 先计算当前节点的熵值
-        self.calc_feature_entropy
+        entropy_value_orig = abs(self.calc_target_entropy(y))
+        if entropy_value_orig < 1e-6: # 如果当前局部的初始熵值已经小于阈值，则创建叶子节点，并返回
+            current_node = DecisionNode(feature_index=None, slice_method="E",
+                                        enum_values=None, target_value=y)
+            parent_node.set_sub_node(parent_feature_value, current_node)
+            return
 
-        # 找到最优特征
+
+        # 找到最优特征，构建分支节点
         best_node_current, entropy_value_current = self.find_best_feature(X, y, feature_index_used)
         current_node = DecisionNode(feature_index=best_node_current, slice_method="E", enum_values=np.unique(X[:, best_node_current]), target_value=y)
         parent_node.set_sub_node(parent_feature_value, current_node)
-
-        if entropy_value_current < 1e-6:
-            return
 
         feature_value_current = np.unique(X[:, best_node_current])
         for label in feature_value_current:
@@ -157,7 +160,31 @@ class MyDecisionTree:
         :param X:
         :return:
         """
+        predict_result = []
 
+        sample_num = X.shape[0]
+        for sample_index in range(sample_num):
+            sample = X[sample_index, :]
+            sample_result = self.get_predict_result(self.root_node, sample)
+            predict_result.append(sample_result)
+
+        return np.array(predict_result)
+
+    def get_predict_result(self, node, sample_one_row):
+        """
+        预测一行数据的结果
+        :param sample_one_row:
+        :return:
+        """
+        if node.feature_index is None:
+            unique_elements, counts = np.unique(node.target_value, return_counts=True)
+            max_count_idx = np.argmax(counts)
+            predict_value = unique_elements[max_count_idx]
+            predict_percent = counts[max_count_idx] / len(node.target_value)
+            return predict_value, predict_percent
+
+        next_node = node.next_node[sample_one_row[node.feature_index]]
+        return self.get_predict_result(next_node, sample_one_row)
 
 
 if "__main__" == __name__:
