@@ -24,7 +24,7 @@ class MyNeuralNetwork:
         theta_in_layer = self.init_thetas(X.shape[1], label_num)
 
         y_result = self.predict_forword(X_std, theta_in_layer)
-        self.calc_loss(y_result, y_std) # 计算损失值
+        self.calc_ouput_loss(y_result, y_std) # 计算损失值
 
 
     def standardize(self, X):
@@ -120,7 +120,17 @@ class MyNeuralNetwork:
         z_exp = np.exp(z)
         return z_exp / np.sum(z_exp, axis=1, keepdims=True) + 1e-8  # 添加epsilon
 
-    def calc_loss(self, y_pred, y_true):
+
+    def calc_ouput_loss(self, y_result, y_std):
+        """
+        计算最后一层隐层到输出层的损失值
+        :param y_result:
+        :param y_std:
+        :return:
+        """
+        return abs(y_result - y_std)
+
+    def calc_loss(self, y_pred, y_true, theta_l, loss_l_p1):
         """
         计算损失值
         :return:
@@ -129,6 +139,13 @@ class MyNeuralNetwork:
         loss_value = -1 / size * (y_true.T.dot(np.log(y_pred)) + (1 - y_true).T.dot(np.log(1 - y_pred)))
 
         return loss_value
+
+    def calc_gradient(self):
+        """
+        计算梯度值
+        :return:
+        """
+
 
     def predict(self, X):
         pass
