@@ -16,16 +16,21 @@ class MyNeuralNetwork:
         self.standard_transformer = None
         self.y_to_one_hot = y_to_one_hot # 是否需要将标签转换为one-hot编码
         self.value_of_layer = {} # 每一层的输出值
+        self.theta_in_layer = None # 每一层的参数值
 
     def fit(self, X, y):
         X_std = self.standardize(X)
         y_std = MyNeuralNetwork.one_hotize(y) if self.y_to_one_hot else y
         label_num = len(np.unique(y))
         theta_in_layer = self.init_thetas(X.shape[1], label_num)
+        X_input = np.insert(X_std, 0, 1, axis=1)
 
-        y_result = self.predict_forword(X_std, theta_in_layer)
-        self.calc_ouput_loss(y_result, y_std) # 计算损失值
 
+        for _ in range(self.max_iter):
+            y_result = self.predict_forword(X_std, theta_in_layer) # 前向传播，计算结果
+            theta_in_layer = self.update_thetas_backward(y_result, y_std, X_input, theta_in_layer) # 反向传播，更新参数
+
+        self.theta_in_layer = theta_in_layer
 
     def standardize(self, X):
         """
@@ -94,15 +99,42 @@ class MyNeuralNetwork:
         input_features = np.insert(input_features, 0, 1, axis=1)
         y_result_linear = input_features.dot(theta)  # 线性变换
         y_result = MyNeuralNetwork.softmax(y_result_linear) # softmax变换
+        self.value_of_layer[num_of_layer] = y_result.copy()
 
         return y_result
 
-    def update_thetas_backward(self):
+    def update_thetas_backward(self, y_result, y_std, X_std, theta_in_layer):
         """
         反向传播：计算每一层的梯度值，并更新每一层的参数
         :return:
         """
-        pass
+        # 计算损失值，计算梯度值，更新参数
+        # 先处理最后一层隐藏层到输出层的梯度值、更新参数（因为最后一层到输出层的激活函数用的是softmax，与其他层不同）
+        # 计算损失值
+        num_of_layer = len(self.layer) + 1
+        theta_in_layer_new = theta_in_layer.copy()
+
+        outer_layer = num_of_layer - 1
+        outer_loss = self.calc_ouput_loss(y_result, y_std)
+        input_of_outer = self.value_of_layer[outer_layer - 1]
+        input_of_outer = np.insert(input_of_outer, 0, 1, axis=1)
+        outer_gradient = input_of_outer.T.dot(outer_loss)
+        theta_in_layer_new[outer_layer] = theta_in_layer_new[outer_layer] - self.learning_rate * outer_gradient
+
+        # 处理每一层隐藏层之间：计算损失值->计算梯度值->更新参数
+        loss_of_next_layer = outer_loss
+        for layer_index in range(outer_layer - 1, -1, -1):
+            sigmoid_value = self.value_of_layer[layer_index]
+            theta_of_current_layer = theta_in_layer_new.get(layer_index)
+            loss_of_current_layer = (theta_of_current_layer.T.dot(loss_of_next_layer)) * (
+                sigmoid_value * (1 - sigmoid_value))
+            input_of_current_layer = X_std if 0 == layer_index else self.value_of_layer[layer_index - 1]
+            gradient_of_current_layer = input_of_current_layer.T.dot(loss_of_current_layer)
+            theta_in_layer_new[layer_index] -= self.learning_rate * gradient_of_current_layer
+
+            loss_of_next_layer = loss_of_current_layer.copy()
+
+        return theta_in_layer_new
 
     @staticmethod
     def sigmoid(z):
@@ -120,6 +152,16 @@ class MyNeuralNetwork:
         z_exp = np.exp(z)
         return z_exp / np.sum(z_exp, axis=1, keepdims=True) + 1e-8  # 添加epsilon
 
+    @staticmethod
+    def softmax_derivative(softmax_z):
+        """
+        softmax作为激活函数的反向传播处理
+        :return:
+        """
+        jacobian = np.diag(softmax_z)
+        jacobian -= np.outer(softmax_z, softmax_z)
+
+        return jacobian
 
     def calc_ouput_loss(self, y_result, y_std):
         """

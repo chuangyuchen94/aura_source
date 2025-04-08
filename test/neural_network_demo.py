@@ -16,6 +16,6 @@ print(f"y_all head: {y_all[:5]}")
 X_train, X_test, y_train, y_test = train_test_split(X_all, y_all, test_size=0.2, random_state=0)
 
 # 初始化神经网络模型
-neural_model = MyNeuralNetwork()
+neural_model = MyNeuralNetwork(max_iter=5)
 neural_model.fit(X_train, y_train)
 neural_model.predict(X_test)
