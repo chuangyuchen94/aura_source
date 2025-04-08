@@ -6,7 +6,7 @@ class MyNeuralNetwork:
     实现神经网络算法
     1、 层与层之间的数据处理：线性变换、激活函数
     """
-    def __init__(self, max_iter=1000, tol=1e-5, learning_rate=0.01, layer=None, y_to_one_hot=True):
+    def __init__(self, max_iter=1000, tol=1e-5, learning_rate=0.01, layer=None, y_to_one_hot=True, random_state=42):
         if layer is None:
             layer = [25, ]
         self.max_iter = max_iter # 最大迭代次数
@@ -17,6 +17,8 @@ class MyNeuralNetwork:
         self.y_to_one_hot = y_to_one_hot # 是否需要将标签转换为one-hot编码
         self.value_of_layer = {} # 每一层的输出值
         self.theta_in_layer = None # 每一层的参数值
+        if random_state is not None:
+            np.random.seed(random_state)
 
     def fit(self, X, y):
         X_std = self.standardize(X)
@@ -117,20 +119,19 @@ class MyNeuralNetwork:
         outer_layer = num_of_layer - 1
         outer_loss = self.calc_ouput_loss(y_result, y_std)
         input_of_outer = self.value_of_layer[outer_layer - 1]
-        input_of_outer = np.insert(input_of_outer, 0, 1, axis=1)
-        outer_gradient = input_of_outer.T.dot(outer_loss)
-        theta_in_layer_new[outer_layer] = theta_in_layer_new[outer_layer] - self.learning_rate * outer_gradient
+        input_of_outer_extend = np.insert(input_of_outer, 0, 1, axis=1)
+        outer_gradient = input_of_outer_extend.T.dot(outer_loss)
+        theta_in_layer_new[outer_layer] = theta_in_layer[outer_layer] - self.learning_rate * outer_gradient
 
         # 处理每一层隐藏层之间：计算损失值->计算梯度值->更新参数
         loss_of_next_layer = outer_loss
         for layer_index in range(outer_layer - 1, -1, -1):
             sigmoid_value = self.value_of_layer[layer_index]
-            theta_of_current_layer = theta_in_layer_new.get(layer_index)
-            loss_of_current_layer = (theta_of_current_layer.T.dot(loss_of_next_layer)) * (
-                sigmoid_value * (1 - sigmoid_value))
+            theta_of_next_layer = theta_in_layer.get(layer_index + 1)
+            loss_of_current_layer = (loss_of_next_layer.dot(theta_of_next_layer.T))[:, 1:] * (sigmoid_value * (1 - sigmoid_value))
             input_of_current_layer = X_std if 0 == layer_index else self.value_of_layer[layer_index - 1]
             gradient_of_current_layer = input_of_current_layer.T.dot(loss_of_current_layer)
-            theta_in_layer_new[layer_index] -= self.learning_rate * gradient_of_current_layer
+            theta_in_layer_new[layer_index] = theta_in_layer[layer_index] - self.learning_rate * gradient_of_current_layer
 
             loss_of_next_layer = loss_of_current_layer.copy()
 
