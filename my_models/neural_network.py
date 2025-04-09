@@ -1,12 +1,52 @@
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
+class NeuralLayer:
+    """
+    定义每一层的网络层
+    1、属性：
+    1）输入a
+    2）参数θ
+    3）输出y
+    2、方法
+    1）fit：训练方法。包括线性转换+激活函数。
+    2）reverse_brocast：反向传播
+    3）update_theta：更新参数
+    """
+    def __init__(self, input_num, output_num, activation_func=None, is_input=False):
+        self.input_num = input_num # 输入的维度
+        self.output_num = output_num # 输出的维度
+        self.activation_func = activation_func # 激活函数
+        self.is_input = is_input # 是否为输入层
+        self.a = None # 输入值
+        self.y = None # 输出值
+        self.theta = None # 参数
+
+        # 如果是输入层，则参数需要考虑偏置项，即多一列特征值
+        if is_input:
+            self.input_num += 1
+
+    def init_theta(self):
+        """
+        初始化参数值
+        :return:
+        """
+        scale = np.sqrt(2.0 / self.input_num)  # He初始化
+        self.theta = np.random.randn(self.input_num, self.output_num) * scale
+
+    def fit(self, input_value):
+        """
+        训练方法
+        :param input_value:
+        :return:
+        """
+
 class MyNeuralNetwork:
     """
     实现神经网络算法
     1、 层与层之间的数据处理：线性变换、激活函数
     """
-    def __init__(self, max_iter=1000, tol=1e-5, learning_rate=0.01, layer=None, y_to_one_hot=True, theta_init_rate =0.01, random_state=42):
+    def __init__(self, max_iter=1000, tol=1e-5, learning_rate=0.01, layer=None, y_to_one_hot=True, theta_init_rate =0.01, print_log=False, random_state=42):
         if layer is None:
             layer = [25, ]
         self.max_iter = max_iter # 最大迭代次数
@@ -20,6 +60,9 @@ class MyNeuralNetwork:
         if random_state is not None:
             np.random.seed(random_state)
         self.theta_init_rate = theta_init_rate
+        self.grad_norm = []
+        self.activation_mean = []
+        self.print_log = print_log
 
     def fit(self, X, y):
         X_std = self.standardize(X)
@@ -90,7 +133,8 @@ class MyNeuralNetwork:
         :return:预测结果值
         """
         y_result = None
-        input_features = X / 255.0  # 添加归一化
+        # input_features = X / 255.0  # 添加归一化
+        input_features = X
         num_of_layer = len(self.layer)
 
         for theta_index in range(num_of_layer):
@@ -102,6 +146,10 @@ class MyNeuralNetwork:
             self.value_of_layer[theta_index] = y_result_activate.copy()
 
             input_features = y_result_activate
+
+            self.activation_mean.append(y_result_activate.mean())
+            if self.print_log:
+                print(f"Layer {theta_index} activation mean:", y_result_activate.mean())
 
         # 最后一层隐藏层到输出层，单独处理，因为涉及分类问题，需要对其应用softmax
         theta = theta_in_layer[num_of_layer]
@@ -136,7 +184,7 @@ class MyNeuralNetwork:
             y_result_activate = self.value_of_layer[layer_index]
             relu_deriv = MyNeuralNetwork.relu_derivative(y_result_activate)
             theta_of_next_layer = theta_in_layer.get(layer_index + 1)
-            loss_of_current_layer = (loss_of_next_layer.dot(theta_of_next_layer.T[:, 1:])) * relu_deriv * 10
+            loss_of_current_layer = (loss_of_next_layer.dot(theta_of_next_layer.T[:, 1:])) * relu_deriv # * 10
             input_of_current_layer = X_std if 0 == layer_index else self.value_of_layer[layer_index - 1]
             gradient_of_current_layer = input_of_current_layer.T.dot(loss_of_current_layer) / input_of_current_layer.shape[0]
             theta_in_layer_new[layer_index] = theta_in_layer[layer_index] - self.learning_rate * gradient_of_current_layer
@@ -144,10 +192,15 @@ class MyNeuralNetwork:
             loss_of_next_layer = loss_of_current_layer.copy()
 
             # 正常范围应在1e-5到1e-3之间
-            if np.abs(gradient_of_current_layer).max() < 1e-5 or np.abs(gradient_of_current_layer).max() > 1e-3:
+            if self.print_log and (np.abs(gradient_of_current_layer).max() < 1e-5 or np.abs(gradient_of_current_layer).max() > 1e-3):
                 print(f"Layer {layer_index} gradient range:",
                   np.abs(gradient_of_current_layer).min(),
                   np.abs(gradient_of_current_layer).max())
+
+            grad_norm = np.linalg.norm(gradient_of_current_layer)
+            self.grad_norm.append(grad_norm)
+            if self.print_log:
+                print(f"Layer {layer_index} gradient norm:", grad_norm)
 
         return theta_in_layer_new
 
@@ -221,8 +274,8 @@ class MyNeuralNetwork:
         :param X:
         :return:
         """
-        input_features = X / 255.0  # 添加归一化
-        X_std = self.standard_transformer.transform(input_features)
+        # input_features = X / 255.0  # 添加归一化
+        X_std = self.standard_transformer.transform(X)
         y_softmax = self.predict_forword(X_std, self.theta_in_layer)
         y_max_index = np.argmax(y_softmax, axis=1).reshape(-1, 1)
 
