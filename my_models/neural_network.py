@@ -13,18 +13,16 @@ class NeuralLayer:
     2）reverse_brocast：反向传播
     3）update_theta：更新参数
     """
-    def __init__(self, input_num, output_num, activation_func=None, is_input=False):
+    def __init__(self, input_num, output_num, activation_func=None, derivative_func=None, is_input=False, is_final_outcome=False):
         self.input_num = input_num # 输入的维度
         self.output_num = output_num # 输出的维度
         self.activation_func = activation_func # 激活函数
+        self.derivative_func = derivative_func # 激活函数的导数，用于反向传播时计算损失值
         self.is_input = is_input # 是否为输入层
         self.a = None # 输入值
         self.y = None # 输出值
         self.theta = None # 参数
-
-        # 如果是输入层，则参数需要考虑偏置项，即多一列特征值
-        if is_input:
-            self.input_num += 1
+        self.is_final_outcome = is_final_outcome # 激活层计算的结果，是否就是最终结果
 
     def init_theta(self):
         """
@@ -34,12 +32,78 @@ class NeuralLayer:
         scale = np.sqrt(2.0 / self.input_num)  # He初始化
         self.theta = np.random.randn(self.input_num, self.output_num) * scale
 
-    def fit(self, input_value):
+    def fit(self, X):
         """
         训练方法
         :param input_value:
         :return:
         """
+        input_features = np.insert(X, 0, 1, axis=1) if self.is_input else X
+
+        y_result_linear = input_features.dot(self.theta)  # 线性变换
+        y_result_activate = self.activation_func(y_result_linear)
+
+        self.a = input_features.copy()  # 输入值
+        self.y = y_result_activate.copy()  # 输出值
+        activate_mean = y_result_activate.mean()
+
+        return y_result_activate, activate_mean
+
+    def reverse_broacast(self, layer_index, loss_of_next_layer, theta_of_next_layer, learning_rate, print_log=False):
+        """
+        反向传播
+        :return:
+        """
+        if not self.is_final_outcome:
+            deriv_value = self.derivative_func(self.y)
+            loss_of_next_layer = (loss_of_next_layer.dot(theta_of_next_layer.T)) * deriv_value
+
+        input_of_current_layer = self.a # 本层的输入值
+        gradient_value = input_of_current_layer.T.dot(loss_of_next_layer) / \
+                                        input_of_current_layer.shape[0]
+        self.theta -= learning_rate * gradient_value
+
+        # 正常范围应在1e-5到1e-3之间
+        if print_log and (
+                    np.abs(gradient_value).max() < 1e-5 or np.abs(gradient_value).max() > 1e-3):
+            print(f"Layer {layer_index} gradient range:",
+                      np.abs(gradient_value).min(),
+                      np.abs(gradient_value).max())
+
+        grad_norm = np.linalg.norm(gradient_value)
+        if print_log:
+            print(f"Layer {layer_index} gradient norm:", grad_norm)
+
+        return grad_norm
+
+    def set_final_outcome_flag(self, flag=True):
+        """
+        设置该隐藏层的下一层是否为输出层
+        :param flag:
+        :return:
+        """
+        self.is_final_outcome = flag
+
+    def get_input_value(self):
+        """
+        获取输入值
+        :return:
+        """
+        return self.a
+
+    def get_output_value(self):
+        """
+        获取输出值
+        :return:
+        """
+        return self.y
+
+    def get_theta(self):
+        """
+        获取参数值
+        :return:
+        """
+        return self.theta
 
 class MyNeuralNetwork:
     """
@@ -67,9 +131,11 @@ class MyNeuralNetwork:
     def fit(self, X, y):
         X_std = self.standardize(X)
         y_std = MyNeuralNetwork.one_hotize(y) if self.y_to_one_hot else y
-        label_num = len(np.unique(y))
-        theta_in_layer = self.init_thetas(X.shape[1], label_num)
         X_input = np.insert(X_std, 0, 1, axis=1)
+        y_label_num = len(np.unique(y))
+
+        self.init_layer(self.layer, X_input, y_label_num)
+
         loss_of_iter = []
 
         for _ in range(self.max_iter):
@@ -104,6 +170,31 @@ class MyNeuralNetwork:
         num_classes = 10  # 明确指定类别总数
         y_std = np.eye(num_classes)[y.reshape(-1)]
         return y_std
+
+    def init_layer(self, layer, X_input, y_label_num):
+        """
+        初始化每一层及其参数值
+        :return:
+        """
+        layer_num = len(layer) + 1
+        layer_of_all = {}
+
+        neural_num_of_layer = []
+        neural_num_of_layer.append(X_input.shape[1])
+        neural_num_of_layer.extend(layer)
+        neural_num_of_layer.append(y_label_num)
+
+        for layer_index in range(layer_num):
+            input_num = neural_num_of_layer[layer_index]
+            output_num = neural_num_of_layer[layer_index + 1]
+            layer_of_each = NeuralLayer(
+                input_num=input_num,
+                output_num=output_num,
+                activation_func=MyNeuralNetwork.relu,
+                derivative_func=MyNeuralNetwork.relu_derivative,
+                is_input=layer_index == 0,
+                is_final_outcome=layer_index == layer_num - 1)
+            layer_of_all[layer_index] = layer_of_each
 
     def init_thetas(self, num_feature, num_label):
         """
