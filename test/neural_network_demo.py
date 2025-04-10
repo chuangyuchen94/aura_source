@@ -19,20 +19,22 @@ print(f"y_all head: {y_all[:5]}")
 X_train, X_test, y_train, y_test = train_test_split(X_all, y_all, test_size=0.2, random_state=0)
 
 # 初始化神经网络模型
-neural_model = MyNeuralNetwork(max_iter=10, layer=[256, 128], learning_rate=0.1)
-start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-print(f"begin to fit(train): {start_time}")
+neural_model = MyNeuralNetwork(max_iter=200, layer=[256, 128, 64], learning_rate=0.05)
+start_time = datetime.now()
+print(f"begin to fit(train): {start_time.strftime("%Y-%m-%d %H:%M:%S")}")
 
 losses = neural_model.fit(X_train, y_train)
 
-stop_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+print(f"loss value ==> max:{max(losses)}, min:{min(losses)}")
+stop_time = datetime.now()
 
-print(f"end of fit(train): {stop_time}; on-going: {stop_time - start_time}")
+print(f"end of fit(train): {stop_time.strftime("%Y-%m-%d %H:%M:%S")}; on-going: {stop_time - start_time}(s)")
 
 iter_num = range(len(losses))
 
-# plt.plot(iter_num, losses)
-# plt.show()
+plt.plot(iter_num, losses)
+plt.title("loss value")
+plt.show()
 
 y_pred = neural_model.predict(X_test)
 score = accuracy_score(y_test, y_pred) * 100
