@@ -35,16 +35,23 @@ class MyNaiveBayes:
         """
         初始化方法
         """
-        pass
+        self.p_of_label = {} # 每个类别的概率
 
     def fit(self, X, y):
         """
         训练方法
+        1、计算各个标签的类别下，不同的特征值出现的比例
         :param X:
         :param y:
         :return:
         """
-        pass
+        label_unique = np.unique(y)
+        for label in label_unique:
+            label_index = np.where(y == label)[0]
+            X_of_label = X[label_index]
+            p_of_label = np.sum(X_of_label, axis=0) / sum(X_of_label)
+            p_of_label[label] = p_of_label.copy()
+
 
     def predict(self, X_test):
         """
