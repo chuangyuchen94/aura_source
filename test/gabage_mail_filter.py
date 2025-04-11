@@ -100,3 +100,7 @@ if "__main__" == __name__:
     bayes_model = MyNaiveBayes()
     bayes_model.fit(X_train, y_train)
     y_pred = bayes_model.predict(X_test)
+
+    mea = sum(y_test == y_pred) / len(y_test) * 100
+
+    print(f"predict accuracy score: {mea}")
