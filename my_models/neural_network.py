@@ -69,6 +69,7 @@ class NeuralLayer:
 
         input_of_current_layer = self.a # 本层的输入值
         gradient_value = input_of_current_layer.T.dot(loss_of_next_layer) / input_of_current_layer.shape[0]
+        gradient_value = np.clip(gradient_value, -1e3, 1e3)  # 防止梯度爆炸
         velocity = self.momentum * self.velocity + gradient_value
         self.theta -= learning_rate * velocity
 
@@ -172,10 +173,10 @@ class MyNeuralNetwork:
 
         loss_of_iter = []
 
-        for _ in range(self.max_iter):
+        for iter_count in range(self.max_iter):
             y_result = self.predict_forward(X_input) # 前向传播，计算结果
             loss_value = MyNeuralNetwork.calc_loss(y_result, y_std)  # 计算最终的损失值
-            self.update_thetas_backward(y_result, y_std) # 反向传播，更新参数
+            self.update_thetas_backward(y_result, y_std, iter_count) # 反向传播，更新参数
 
             loss_of_iter.append(loss_value)
 
@@ -262,7 +263,7 @@ class MyNeuralNetwork:
 
         return y_result_activate
 
-    def update_thetas_backward(self, y_result, y_std):
+    def update_thetas_backward(self, y_result, y_std, epoch):
         """
         反向传播：计算每一层的梯度值，并更新每一层的参数
         :return:
@@ -273,14 +274,16 @@ class MyNeuralNetwork:
         num_of_layer = len(self.layer) + 1
         loss_of_next_layer = y_result - y_std
         theta_of_next_layer = None
+        learning_rate = self.learning_rate
 
         for layer_index in range(num_of_layer - 1, -1, -1):
             layer_of_current = self.layer_of_all[layer_index]
-            theta_of_current_layer, grad_norm = layer_of_current.reverse_broadcast(layer_index, loss_of_next_layer, theta_of_next_layer, self.learning_rate, print_log=self.print_log)
+            theta_of_current_layer, grad_norm = layer_of_current.reverse_broadcast(layer_index, loss_of_next_layer, theta_of_next_layer, learning_rate, print_log=self.print_log)
 
             loss_of_layer = layer_of_current.calc_loss(y_result, y_std, loss_of_next_layer, theta_of_next_layer, print_log=self.print_log)
             loss_of_next_layer = loss_of_layer
             theta_of_next_layer = theta_of_current_layer
+            learning_rate = max(self.learning_rate, learning_rate * (0.95 ** epoch)) # 动态调整学习率
 
             self.grad_norm.append(grad_norm)
             if self.print_log:
