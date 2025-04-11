@@ -72,7 +72,7 @@ def translate_content_to_vector(words_in_content_list, vocabulary):
         for word in words_in_content_list[sample_index]:
             feature_index = vocabulary.index(word)
             if feature_index >= 0:
-                content_vector[sample_index][feature_index] = 1
+                content_vector[sample_index][feature_index] = content_vector[sample_index][feature_index] + 1
 
     return content_vector
 
