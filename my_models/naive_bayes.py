@@ -35,7 +35,8 @@ class MyNaiveBayes:
         """
         初始化方法
         """
-        self.p_of_label = {} # 每个类别的概率
+        self.pre_of_label = {} # 每个标签值的先验概率
+        self.label_p_of_label = {} # 每个类别的概率
 
     def fit(self, X, y):
         """
@@ -45,12 +46,19 @@ class MyNaiveBayes:
         :param y:
         :return:
         """
+        # 计算各个标签的类别下，不同的特征值出现的比例
         label_unique = np.unique(y)
         for label in label_unique:
             label_index = np.where(y == label)[0]
             X_of_label = X[label_index]
-            p_of_label = np.sum(X_of_label, axis=0) / sum(X_of_label)
-            p_of_label[label] = p_of_label.copy()
+            count_of_feature = np.sum(X_of_label, axis=0)
+            total_of_feature = np.sum(X_of_label)
+            p_of_label = count_of_feature / total_of_feature
+            self.label_p_of_label[label] = p_of_label.copy()
+
+        # 计算每个标签的先验概率
+        for label in label_unique:
+            self.pre_of_label[label] = np.sum(y==label) / len(y)
 
 
     def predict(self, X_test):
