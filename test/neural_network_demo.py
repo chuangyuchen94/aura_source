@@ -19,7 +19,7 @@ print(f"y_all head: {y_all[:5]}")
 X_train, X_test, y_train, y_test = train_test_split(X_all, y_all, test_size=0.2, random_state=0)
 
 # 初始化神经网络模型
-neural_model = MyNeuralNetwork(max_iter=200, layer=[256, 128, 64], learning_rate=0.05)
+neural_model = MyNeuralNetwork(max_iter=1000, layer=[256, 128, 64, 32], learning_rate=0.05)
 start_time = datetime.now()
 print(f"begin to fit(train): {start_time.strftime("%Y-%m-%d %H:%M:%S")}")
 
