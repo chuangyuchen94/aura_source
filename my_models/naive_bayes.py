@@ -31,12 +31,14 @@ import numpy as np
             P(hi)为标量(1,)
 """
 class MyNaiveBayes:
-    def __init__(self):
+    def __init__(self, alpha=1.0, output_func=None):
         """
         初始化方法
         """
         self.pre_of_label = {} # 每个标签值的先验概率
         self.label_p_of_label = {} # 每个类别的概率
+        self.alpha = alpha
+        self.output_func = output_func
 
     def fit(self, X, y):
         """
@@ -48,12 +50,14 @@ class MyNaiveBayes:
         """
         # 计算各个标签的类别下，不同的特征值出现的比例
         label_unique = np.unique(y)
+        nun_of_features = X.shape[1]
+
         for label in label_unique:
             label_index = np.where(y == label)[0]
             X_of_label = X[label_index]
             count_of_feature = np.sum(X_of_label, axis=0)
             total_of_feature = np.sum(X_of_label)
-            p_of_label = count_of_feature / total_of_feature
+            p_of_label = (count_of_feature + self.alpha) / (total_of_feature + self.alpha * nun_of_features)
             self.label_p_of_label[label] = p_of_label.copy()
 
         # 计算每个标签的先验概率
@@ -64,8 +68,21 @@ class MyNaiveBayes:
     def predict(self, X_test):
         """
         预测方法
+        公式：ln(P(hi|D)) = X @ ln(P(Wj|hi)) + ln(P(hi))
         :param X_test:
         :return:
         """
-        pass
+        label_p_list = []
+        pre_b_list = []
+
+        for label in self.label_p_of_label:
+            label_p_list.append(self.label_p_of_label[label])
+            pre_b_list.append(self.pre_of_label[label])
+
+        label_p = np.array(label_p_list).T
+        pre_b = np.array(pre_b_list).reshape(-1, 2)
+
+        ln_pred = X_test.dot(np.log(label_p)) + np.log(pre_b)
+
+        return np.argmax(ln_pred, axis=1)
 
