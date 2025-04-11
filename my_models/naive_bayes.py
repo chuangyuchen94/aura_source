@@ -19,6 +19,16 @@ import numpy as np
         P(h+)、P(h-)：是基于对训练数据的统计得出——训练数据中，垃圾邮件、正常邮件的比例
         P(wn|h+)：垃圾邮件中，单词wn出现的比例——统计训练的垃圾邮件中，单词wn出现的比例
         P(wn|h-)：正常邮件中，单词wn出现的比例——统计训练集的正常邮件中，单词wn出现的比例
+        P(h+|D) = P(D|h+) * P(h+) / P(D) 近似 P(w1|h+)*P(w2|h+)...P(wn|h+) * P(h+)
+        P(h-|D) = P(D|h-) * P(h-) / P(D) 近似 P(w1|h-)*P(w2|h-)...P(wn|h-) * P(h-)
+        综合P(h+|D)与P(h-|D)：
+            ln(P(hi|D)) = X @ ln(P(Wj|hi)) + ln(P(hi))，
+                i代表+和-；
+                Wj的汇总就是D
+        例如：
+            X = (50, 844), y = (50,) , 
+            P(Wj|hi) = (844, 1) ==> 垃圾邮件中，词库中的单词出现的概率（频率） 
+            P(hi)为标量(1,)
 """
 class MyNaiveBayes:
     def __init__(self):
