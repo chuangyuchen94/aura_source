@@ -78,7 +78,7 @@ class RelatedRule:
         if title is not None:
             print(title)
 
-        print(f"item_tuple:{self.item_tuple} | pre_set:{self.pre_set} | post_set:{self.post_set} | support:{self.support} | confidence:{self.confidence} | lift:{self.lift} | ")
+        print(f"item_tuple:{self.item_tuple} | pre_set:{self.pre_set} | post_set:{self.post_set} | support:{self.support} | confidence:{self.confidence} | lift:{self.lift}")
 
 class MyRelatedRuleModel:
     def __init__(self):
@@ -188,6 +188,7 @@ class MyRelatedRuleModel:
         :return:
         """
         related_rule_list = []
+        item_list = []
 
         rules_to_combine = self.related_rule_map[layer_of_current]
         len_of_rules_to_combine = len(rules_to_combine)
@@ -195,35 +196,36 @@ class MyRelatedRuleModel:
         if 1 == len_of_rules_to_combine:
             return 0
 
-        for index in range(len_of_rules_to_combine - 1):
-            current_index = index
-            next_index = index + 1
-            rule_of_current = rules_to_combine[current_index]
-            rule_of_next = rules_to_combine[next_index]
+        for current_index in range(len_of_rules_to_combine - 1):
+            for next_index in range(current_index, len_of_rules_to_combine):
+                rule_of_current = rules_to_combine[current_index]
+                rule_of_next = rules_to_combine[next_index]
 
-            set_of_current = rule_of_current.get_set()
-            set_of_next = rule_of_next.get_set()
-            diff = set(set_of_next) - set(set_of_current)  # 找到两个当前层级的项集的差值
+                set_of_current = rule_of_current.get_set()
+                set_of_next = rule_of_next.get_set()
+                diff = set(set_of_next) - set(set_of_current)  # 找到两个当前层级的项集的差值
 
-            for item in diff:
-                new_set = set_of_current + (item,)
-                related_rule = self.create_related_rule(X_std, new_set, metric, min_threshold)
+                for item in diff:
+                    new_set = set_of_current + (item,)
+                    related_rule = self.create_related_rule(X_std, new_set, metric, min_threshold)
 
-                if related_rule is None:
-                    continue
+                    if related_rule is None:
+                        continue
 
-                related_rule.set_pre_set(set_of_current)
-                related_rule.set_post_set((item,))
+                    related_rule.set_pre_set(set_of_current)
+                    related_rule.set_post_set((item,))
 
-                # 计算置信度 X ==> Y，p(Y|X)=p(XY)/p(X)
-                confidence = related_rule.get_metric("support") / rule_of_current.get_metric("support")
-                related_rule.set_metric("confidence", confidence)
-                # 计算提升度 lift(A==>B) = p(B|A)/p(B)
-                item_support_value = self.get_first_rule_support(item)
-                lift = related_rule.get_metric("support") / item_support_value
-                related_rule.set_metric("lift", lift)
+                    # 计算置信度 X ==> Y，p(Y|X)=p(XY)/p(X)
+                    confidence = related_rule.get_metric("support") / rule_of_current.get_metric("support")
+                    related_rule.set_metric("confidence", confidence)
+                    # 计算提升度 lift(A==>B) = p(B|A)/p(B)
+                    item_support_value = self.get_first_rule_support(item)
+                    lift = related_rule.get_metric("support") / item_support_value
+                    related_rule.set_metric("lift", lift)
 
-                related_rule_list.append(related_rule)
+                    if new_set not in item_list:
+                        related_rule_list.append(related_rule)
+                        item_list.append(new_set)
 
         self.related_rule_map[layer_of_current + 1] = related_rule_list
 
