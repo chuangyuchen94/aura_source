@@ -9,6 +9,8 @@ class MyLDA:
         """
         初始化方法
         """
+        self.reject_value_selected = None
+        self.reject_vector_selected = None
         self.n_features= n_features # 降维后的维数，若不指定，则将取标签类别数-1
         self.scatter_matrix_w = None # 类内散布矩阵
         self.scatter_matrix_b = None # 类间散布矩阵
@@ -27,16 +29,18 @@ class MyLDA:
         for label_index, label in enumerate(label_all):
             target_matrix[:, label_index] = (y == label)
         label_count_matrix = np.sum(target_matrix, axis=0)  # 计算每个类别的样本数
-        type_means = X.T.dot(target_matrix) / label_count_matrix
+        type_means = X.T.dot(target_matrix) / label_count_matrix # 计算每个类别的均值向量
 
         # 计算类内散布矩阵 SW=sum(Sk), Sk=sum((x-u)*(x-u)^T)，用矩阵表示为：Sk=(Xk-Uk)^T@(Xk-Uk)
-        means = target_matrix.dot(type_means.T)
-        diff_w = X - means
+        sample_means = np.zeros_like(X)
+        for i, label in enumerate(y):
+            sample_means[i] = type_means[:, np.where(label_all == label)[0][0]]
+        diff_w = X - sample_means
         scatter_matrix_w = diff_w.T.dot(diff_w).astype(np.float64)
         self.scatter_matrix_w = scatter_matrix_w
 
         # 计算类间散布矩阵 SB = D⋅W⋅D^T
-        mean_of_all = np.mean(X)
+        mean_of_all = np.mean(X, axis=0).reshape(-1, 1)
         diff_b = type_means - mean_of_all
         w_matrix = np.diag(label_count_matrix)
         scatter_matrix_b = diff_b.dot(w_matrix).dot(diff_b.T).astype(np.float64)
@@ -49,9 +53,11 @@ class MyLDA:
 
         # 降维
         reject_value = reject_value.reshape(-1)
-        order_index = np.argsort(reject_value)
+        order_index = np.argsort(reject_value)[::-1][:self.n_features,]
+        reject_vector_selected = reject_vector[:, order_index]
 
-        return
+        self.reject_vector_selected = reject_vector_selected
+        self.reject_value_selected = reject_value[order_index]
 
     def fit_transform(self, X, y):
         """
@@ -60,7 +66,8 @@ class MyLDA:
         :param y:
         :return:
         """
-        pass
+        self.fit(X, y)
+        return self.transform(X)
 
     def transform(self, X):
         """
@@ -68,5 +75,5 @@ class MyLDA:
         :param X:
         :return:
         """
-        pass
+        return X.dot(self.reject_vector_selected)
 
