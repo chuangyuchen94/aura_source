@@ -21,3 +21,6 @@ if "__main__" == __name__:
 
     lda_transformer = MyLDA(n_features=2)
     lda_transformer.fit(X, y)
+    x_lda = lda_transformer.transform(X)
+
+    print(f"x_lda shape: {x_lda.shape}")
