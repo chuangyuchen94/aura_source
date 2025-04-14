@@ -10,6 +10,8 @@ class MyLDA:
         初始化方法
         """
         self.n_features= n_features # 降维后的维数，若不指定，则将取标签类别数-1
+        self.scatter_matrix_w = None # 类内散布矩阵
+        self.scatter_matrix_b = None # 类间散布矩阵
 
     def fit(self, X, y):
         """
@@ -19,23 +21,37 @@ class MyLDA:
         :return:
         """
         # 统计标签类别
+        y = y.reshape(-1)
         label_all = np.unique(y)
-
-        # 计算投影前每个标签类别的均值：对列求均值Uk；结果为(1, n)矩阵
-        mean_of_label = {}
-        for label in label_all:
-            mean_of_label[label] = np.mean(X[y==label], axis=0)
+        target_matrix = np.zeros((X.shape[0], len(label_all)))
+        for label_index, label in enumerate(label_all):
+            target_matrix[:, label_index] = (y == label)
+        label_count_matrix = np.sum(target_matrix, axis=0)  # 计算每个类别的样本数
+        type_means = X.T.dot(target_matrix) / label_count_matrix
 
         # 计算类内散布矩阵 SW=sum(Sk), Sk=sum((x-u)*(x-u)^T)，用矩阵表示为：Sk=(Xk-Uk)^T@(Xk-Uk)
-        scatter_matrix_w = {}
-        for label in label_all:
-            scatter_matrix_w[label] = (X[y==label]-mean_of_label[label]).T.dot(X[y==label]-mean_of_label[label])
+        means = target_matrix.dot(type_means.T)
+        diff_w = X - means
+        scatter_matrix_w = diff_w.T.dot(diff_w).astype(np.float64)
+        self.scatter_matrix_w = scatter_matrix_w
 
-        # 计算类间散布矩阵
-        mean_of_all = np.sum(X)
-        scatter_matrix_b = {}
+        # 计算类间散布矩阵 SB = D⋅W⋅D^T
+        mean_of_all = np.mean(X)
+        diff_b = type_means - mean_of_all
+        w_matrix = np.diag(label_count_matrix)
+        scatter_matrix_b = diff_b.dot(w_matrix).dot(diff_b.T).astype(np.float64)
+
+        self.scatter_matrix_b = scatter_matrix_b
 
         # 计算特征向量及特征值
+        scatter_sw_inv_sb = np.linalg.inv(scatter_matrix_w) @ scatter_matrix_b
+        reject_value, reject_vector = np.linalg.eig(scatter_sw_inv_sb)
+
+        # 降维
+        reject_value = reject_value.reshape(-1)
+        order_index = np.argsort(reject_value)
+
+        return
 
     def fit_transform(self, X, y):
         """
