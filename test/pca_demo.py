@@ -1,6 +1,10 @@
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # 直接添加 test 的父目录（aura_source）
+
 import pandas as pd
 import numpy as np
 from my_models.principle_component_analysis import MyPCATransformer
+
 
 def load_data():
     data = pd.read_csv(filepath_or_buffer="https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data")
