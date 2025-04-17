@@ -1,3 +1,4 @@
+import numpy as np
 
 """
 实现隐马尔科夫模型
@@ -17,7 +18,25 @@ class MyHMM:
         """
         实现HMM的学习问题：已知观测序列，求模型参数
         """
-        pass
+        observed_state = np.unique(X)
+
+        # 初始化模型参数值
+        self.init_model_params(observed_state)
+
+        # 计算前向概率
+        alpha = self.calc_forward_p(X)
+
+        # 计算后向概率
+        beta = self.calc_backward_p(X)
+
+        # 计算状态占用概率
+        gamma = self.calc_state_used_p(alpha, beta)
+
+        # 计算状态转移期望
+        xi = self.calc_state_transfered_q(X, alpha, beta)
+
+        # 更新模型参数
+        self.update_model_params(X, observed_state, gamma, xi)
 
     def predict_p(self, observed_sequence):
         """
@@ -29,3 +48,125 @@ class MyHMM:
         """
         已知模型及观测序列，找到最可能的隐藏状态序列
         """
+        pass
+
+    def init_model_params(self, observed_state):
+        """
+        初始化模型参数值
+        """
+        # 初始化隐藏状态的初始值π
+        init_states = np.abs(np.random.rand(1, self.n_states))
+        init_states = MyHMM.onilize(init_states)
+
+        self.init_states = init_states
+
+        # 初始化隐藏状态的转移概率矩阵A
+        transition_matrix = np.abs(np.random.rand(self.n_states, self.n_states))
+        transition_matrix = MyHMM.onilize(transition_matrix)
+
+        self.transition_matrix = transition_matrix
+
+        # 初始化隐藏状态的生成观测序列的矩阵B
+        production_matrix = np.abs(np.random.rand(self.n_states, len(observed_state)))
+        self.production_matrix = MyHMM.onilize(production_matrix)
+
+    @staticmethod
+    def onilize(data):
+        """
+        对矩阵进行归一化
+        """
+        total = np.sum(data, axis=1).reshape(-1, 1)
+
+        onilized_data = data / total
+        
+        return onilized_data
+
+    def calc_forward_p(self, observed_state):
+        """
+        计算前向概率
+        """
+        alpha = np.zeros((len(observed_state), self.n_states))
+
+        alpha[0] = self.init_states * self.production_matrix[:, observed_state[0]]
+        for index in range(1, len(observed_state)):
+            alpha[index] = (alpha[index - 1] @ self.transition_matrix) * self.production_matrix[:, observed_state[index]]
+
+        return alpha
+
+    def calc_backward_p(self, observed_state):
+        """
+        计算后向概率
+        """
+        beta = np.zeros((len(observed_state), self.n_states))
+
+        beta[-1] = 1
+        for index in range(len(observed_state) -2, -1, -1):
+            beta[index] = self.transition_matrix.dot(self.production_matrix[:, observed_state[index + 1]] * beta[index + 1])
+        
+        return beta
+
+    def calc_state_used_p(self, alpha, beta):
+        """
+        计算状态占用概率
+        """
+        p_0 = np.sum(alpha[-1, :])
+        gamma = alpha * beta / p_0
+
+        return gamma
+    
+    def calc_state_transfered_q(self, observed_state, alpha, beta):
+        """
+        计算状态转移期望
+        """
+        # 计算总概率 P(O|λ)
+        P_O = np.sum(alpha[-1, :])
+
+        num_of_observed_state = len(observed_state)
+        Xi = np.zeros((num_of_observed_state - 1, self.n_states, self.n_states))
+
+        for index in range(num_of_observed_state - 1):
+            observed_state_t = observed_state[index + 1]
+
+            # 计算分子部分：α_t[i] * A[i,j] * B[j,obs] * β_{t+1}(j)
+            numerator = alpha[index, :, None] * self.transition_matrix * self.production_matrix[:, observed_state_t][None, :] * beta[index + 1, :][None, :]
+
+            # 归一化
+            Xi[index] = numerator / P_O
+        
+        return Xi
+
+    def update_model_params(self, X, observed_state, gamma, xi):
+        """
+        更新模型参数
+        """
+        # 更新π
+        new_init_states = gamma[0, :]
+
+        # 更新转移矩阵
+        new_transition_matrix = np.zeros((self.n_states, self.n_states))
+        for i in range(self.n_states):
+            sum_gamma_i = np.sum(gamma[:-1, i])  # 分母：状态i的总占用次数（除最后时刻）
+            for j in range(self.n_states):
+                new_transition_matrix[i, j] = np.sum(xi[:, i, j]) / sum_gamma_i
+        
+        # 更新生成观测序列矩阵
+        new_production_matrix = np.zeros((self.n_states, len(observed_state)))
+        for i in range(self.n_states):
+            sum_gamma_i = np.sum(gamma[:, i])  # 分母：状态i的总占用次数
+            for k in range(len(observed_state)):
+                # 分子：在状态i下观测到k的期望次数
+                mask = (X == k)
+                new_production_matrix[i, k] = np.sum(gamma[mask, i]) / sum_gamma_i
+
+        self.init_states = new_init_states
+        self.transition_matrix = new_transition_matrix
+        self.production_matrix = new_production_matrix
+
+    def print(self):
+        """
+        打印模型的参数信息
+        :return:
+        """
+        print(f"init_state:\n{self.init_states}")
+        print(f"transition_matrix:\n{self.transition_matrix}")
+        print(f"production_matrix:\n{self.production_matrix}")
