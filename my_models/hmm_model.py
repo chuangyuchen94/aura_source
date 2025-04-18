@@ -24,7 +24,7 @@ class MyHMM:
         self.init_model_params(observed_state)
 
         # 计算前向概率
-        alpha = self.calc_forward_p(X)
+        alpha, p = self.calc_forward_p(self.init_states, self.transition_matrix, self.production_matrix, X)
 
         # 计算后向概率
         beta = self.calc_backward_p(X)
@@ -38,15 +38,27 @@ class MyHMM:
         # 更新模型参数
         self.update_model_params(X, observed_state, gamma, xi)
 
-    def predict_p(self, observed_sequence):
+    def predict_p(self, observed_sequence, pi=None, A=None, B=None):
         """
         已知模型参数及观测序列，求观测序列的概率
         """
-        pass
+        if pi is None:
+            pi = self.init_states
 
-    def predict_i(self, observed_sequence):
+        if A is None:
+            A = self.transition_matrix
+
+        if B is None:
+            B = self.production_matrix
+
+        alpha, p = self.calc_forward_p(pi, A, B, observed_sequence)
+
+        return alpha, p
+
+
+    def predict_i(self, observed_sequence, pi=None, A=None, B=None):
         """
-        已知模型及观测序列，找到最可能的隐藏状态序列
+        已知模型及观测序列，找到隐藏状态的最可能序列
         """
         pass
 
@@ -81,17 +93,19 @@ class MyHMM:
         
         return onilized_data
 
-    def calc_forward_p(self, observed_state):
+    def calc_forward_p(self, init_states, transition_matrix, production_matrix, observed_sequence):
         """
         计算前向概率
         """
-        alpha = np.zeros((len(observed_state), self.n_states))
+        alpha = np.zeros((len(observed_sequence), self.n_states))
 
-        alpha[0] = self.init_states * self.production_matrix[:, observed_state[0]]
-        for index in range(1, len(observed_state)):
-            alpha[index] = (alpha[index - 1] @ self.transition_matrix) * self.production_matrix[:, observed_state[index]]
+        alpha[0] = init_states * production_matrix[:, observed_sequence[0]]
+        for index in range(1, len(observed_sequence)):
+            alpha[index] = (alpha[index - 1] @ transition_matrix) * production_matrix[:, observed_sequence[index]]
 
-        return alpha
+        sequence_p = np.sum(alpha[-1])
+
+        return alpha, sequence_p
 
     def calc_backward_p(self, observed_state):
         """

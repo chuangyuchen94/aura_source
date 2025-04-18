@@ -31,4 +31,15 @@ if "__main__" == __name__:
 
     hmm_model.fit(z)
     hmm_model.print()
-    
+
+    print(f"\n--------评估问题（已知 λ 和 O，求 P(O|λ) ）--------")
+    observed_sequence = np.array([0, 1, 0]).reshape(-1)
+    print(f"observed_sequence 1: {observed_sequence}")
+    alpha_1, observed_p_1 = hmm_model.predict_p(observed_sequence)
+    print(f"观测序列概率：{observed_p_1} | alpha：{alpha_1}")
+
+    observed_sequence_2 = np.array([1, 0, 1]).reshape(-1)
+    print(f"observed_sequence 2: {observed_sequence_2}")
+    alpha_2, observed_p_2 = hmm_model.predict_p(observed_sequence_2)
+    print(f"观测序列概率：{observed_p_2} | alpha：{alpha_2}")
+
