@@ -23,7 +23,7 @@ def load_data():
     return X, Z
 
 if "__main__" == __name__:
-    hmm_model = MyHMM(n_states=3)
+    hmm_model = MyHMM(n_states=60)
     
     X, z = load_data()
     print(f"X shape: {X.shape}")
@@ -43,3 +43,12 @@ if "__main__" == __name__:
     alpha_2, observed_p_2 = hmm_model.predict_p(observed_sequence_2)
     print(f"观测序列概率：{observed_p_2} | alpha：{alpha_2}")
 
+    observed_sequence_3 = np.array([1, 0, 1]).reshape(-1)
+    print(f"observed_sequence 3: {observed_sequence_3}")
+    best_path, max_prob = hmm_model.predict_i(observed_sequence_3)
+    print(f"最优路径：{best_path} | 概率：{max_prob}")
+
+    observed_sequence_4 = np.array([0, 1, 2]).reshape(-1)
+    print(f"observed_sequence 4: {observed_sequence_4}")
+    best_path, max_prob = hmm_model.predict_i(observed_sequence_4)
+    print(f"最优路径：{best_path} | 概率：{max_prob}")

@@ -44,10 +44,8 @@ class MyHMM:
         """
         if pi is None:
             pi = self.init_states
-
         if A is None:
             A = self.transition_matrix
-
         if B is None:
             B = self.production_matrix
 
@@ -60,7 +58,42 @@ class MyHMM:
         """
         已知模型及观测序列，找到隐藏状态的最可能序列
         """
-        pass
+        if pi is None:
+            pi = self.init_states
+        if A is None:
+            A = self.transition_matrix
+        if B is None:
+            B = self.production_matrix
+
+        num_of_state = self.n_states
+        num_of_sequence = len(observed_sequence)
+
+        # 初始化delta和psi矩阵
+        delta = np.zeros((num_of_sequence, num_of_state))
+        psi = np.zeros((num_of_sequence, num_of_state), dtype=np.int8)
+
+        # 初始化t=0
+        delta[0] = pi * B[:, observed_sequence[0]]
+        psi[0] = 0 # 无前驱状态
+
+        # 递推计算
+        for t in range(1, num_of_sequence):
+            max_delta_a = 0
+            for j in range(num_of_state):
+                trans_prob = delta[t - 1] * A[:, j]
+                max_trans = np.max(trans_prob)
+                delta[t, j] = max_trans * B[j, observed_sequence[t]]
+                psi[t, j] = np.argmax(trans_prob)
+
+        # 终止
+        max_prob = np.max(delta[-1])
+        best_path = [np.argmax(delta[-1])]
+
+        # 回溯路径
+        for t in range(num_of_sequence - 2, -1, -1):
+            best_path.insert(0, psi[t + 1, best_path[0]])
+
+        return best_path, max_prob
 
     def init_model_params(self, observed_state):
         """
