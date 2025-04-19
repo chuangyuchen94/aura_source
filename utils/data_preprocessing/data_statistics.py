@@ -3,6 +3,8 @@ import pandas as pd
 def analyze_data(data, min_var=100):
     """
     分析数据，得到以下统计信息，进行打印输出：\n
+    特征个数 \n
+
     1. 数值型 \n
     1）最大值 \n
     2）最小值 \n
@@ -23,7 +25,7 @@ def analyze_data(data, min_var=100):
     pd_data = pd.DataFrame(data)
     big_var_column = []  # 统计大方差字段
 
-    print(f"\n字段总行数：{data.shape[0]} | 字段总列数：{data.shape[1]} \n")
+    print(f"\n总行数：{data.shape[0]} | 总列数：{data.shape[1]} \n")
 
     for column in pd_data.columns:
         column_info = ""
@@ -33,7 +35,7 @@ def analyze_data(data, min_var=100):
         column_info += f"\t 枚举值个数：{len(pd_data[column].unique())} \n"
 
         # 统计枚举值信息
-        if len(pd_data[column].unique()) < 10:
+        if len(pd_data[column].unique()) < 10 or pd_data[column].dtype in ["object", ]:
             column_info += f"\t 枚举值：{pd_data[column].unique()} \n"
             column_info += f"\t 枚举值个数：{pd_data[column].value_counts()} \n"
             column_info += f"\t 枚举值占比：{pd_data[column].value_counts() / len(pd_data[column])} \n"
@@ -48,9 +50,10 @@ def analyze_data(data, min_var=100):
             column_info += f"\t 最大值：{pd_data[column].max()} \n"
 
         # 统计大方差字段
-        var_value = pd_data[column].var()
-        if  var_value >= min_var:
-            big_var_column.append((column, var_value))
+        if pd_data[column].dtype in ["int64", "float64"]:
+            var_value = pd_data[column].var()
+            if  var_value >= min_var:
+                big_var_column.append((column, var_value))
 
         print(column_info)
 
