@@ -1,6 +1,3 @@
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # 直接添加 test 的父目录（aura_source）
-
 import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
