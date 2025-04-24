@@ -1,9 +1,13 @@
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # 直接添加 test 的父目录（aura_source）
+
 import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 import sqlite3
 from sklearn.preprocessing import LabelEncoder
 from scipy.sparse.linalg import svds
+from utils.model.score_by_svd import ScoringBySVD
 
 def load_play_data(path=None):
     """
@@ -132,3 +136,24 @@ def get_recomendation(user_id, U, S, Vt, user_encoder, song_encoder, used_items,
     orig_item_id = song_encoder.inverse_transform(recommend_items)
 
     return orig_item_id
+
+def load_clean_data(path=None):
+    """
+    加载数据并进行清理
+    """
+    action_score_data = calc_song_score(load_play_data(path))
+    
+    label_encoder = create_label_encoder(action_score_data, ["user_id", "song_id"])
+    action_score_data["user_id"] = label_encoder["user_id"].transform(action_score_data["user_id"])
+    action_score_data["song_id"] = label_encoder["song_id"].transform(action_score_data["song_id"])
+
+    score_matrix = build_user_song_score_matrix(action_score_data, "user_id", "song_id", "score")
+
+    return score_matrix, label_encoder
+
+
+
+if "__main__" == __name__:
+    score_matrix, label_encoder = load_clean_data()
+    svd_transformer = ScoringBySVD(n_components=50)
+    svd_transformer.fit(score_matrix)
